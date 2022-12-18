@@ -1,0 +1,34 @@
+expires
+=======================
+
+Syntax:	expires [modified] time;
+expires epoch | max | off;
+Default:
+expires off;
+Context:	http, server, location, if in location
+Enables or disables adding or modifying the “Expires” and “Cache-Control” response header fields provided that the response code equals 200, 201 (1.3.10), 204, 206, 301, 302, 303, 304, 307 (1.1.16, 1.0.13), or 308 (1.13.0). The parameter can be a positive or negative time.
+
+The time in the “Expires” field is computed as a sum of the current time and time specified in the directive. If the modified parameter is used (0.7.0, 0.6.32) then the time is computed as a sum of the file’s modification time and the time specified in the directive.
+
+In addition, it is possible to specify a time of day using the “@” prefix (0.7.9, 0.6.34):
+
+expires @15h30m;
+The contents of the “Cache-Control” field depends on the sign of the specified time:
+
+time is negative — “Cache-Control: no-cache”.
+time is positive or zero — “Cache-Control: max-age=t”, where t is a time specified in the directive, in seconds.
+The epoch parameter sets “Expires” to the value “Thu, 01 Jan 1970 00:00:01 GMT”, and “Cache-Control” to “no-cache”.
+
+The max parameter sets “Expires” to the value “Thu, 31 Dec 2037 23:55:55 GMT”, and “Cache-Control” to 10 years.
+
+The off parameter disables adding or modifying the “Expires” and “Cache-Control” response header fields.
+
+The last parameter value can contain variables (1.7.9):
+
+map $sent_http_content_type $expires {
+    default         off;
+    application/pdf 42d;
+    ~image/         max;
+}
+
+expires $expires;

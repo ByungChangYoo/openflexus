@@ -1,0 +1,4 @@
+Install
+=======================
+
+The Flexus documentation is composed of a few major sections:

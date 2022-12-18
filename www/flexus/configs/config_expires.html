@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="ko" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>expires &mdash; flexus 1.0 문서</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/copybutton.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/theme_overrides.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/tabs.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/clipboard.min.js"></script>
+        <script src="../_static/copybutton.js"></script>
+        <script src="../_static/translations.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="author" title="이 문서 정보" href="../about.html" />
+    <link rel="index" title="색인" href="../genindex.html" />
+    <link rel="search" title="검색" href="../search.html" />
+    <link rel="next" title="Variable" href="../variables/variables.html" />
+    <link rel="prev" title="auto-index" href="config_auto_index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> flexus
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../about.html">About</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Install</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../actions/actions.html">Action</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="configs.html">Config</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="config_add_response_header.html">add-response-header</a></li>
+<li class="toctree-l2"><a class="reference internal" href="config_add_response_header_off_if_error.html">add-response-header-off-if-error</a></li>
+<li class="toctree-l2"><a class="reference internal" href="config_add_response_header_parent_off.html">add-response-header-parent-off</a></li>
+<li class="toctree-l2"><a class="reference internal" href="config_set_response_header.html">set-response-header</a></li>
+<li class="toctree-l2"><a class="reference internal" href="config_set_response_header_off_if_error.html">set-response-header-off-if-error</a></li>
+<li class="toctree-l2"><a class="reference internal" href="config_set_response_header_parent_off.html">set-response-header-parent-off</a></li>
+<li class="toctree-l2"><a class="reference internal" href="config_rewrite_response_header.html">rewrite-response-header</a></li>
+<li class="toctree-l2"><a class="reference internal" href="config_mime_types.html">mime-types</a></li>
+<li class="toctree-l2"><a class="reference internal" href="config_auto_index.html">auto-index</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">expires</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../variables/variables.html">Variable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../functions/functions.html">Funtion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer/developer.html">Developer</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">flexus</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="configs.html">Config</a> &raquo;</li>
+      <li>expires</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/configs/config_expires.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="expires">
+<h1>expires<a class="headerlink" href="#expires" title="이 제목에 대한 퍼머링크"></a></h1>
+<p>Syntax: expires [modified] time;
+expires epoch | max | off;
+Default:
+expires off;
+Context:        http, server, location, if in location
+Enables or disables adding or modifying the “Expires” and “Cache-Control” response header fields provided that the response code equals 200, 201 (1.3.10), 204, 206, 301, 302, 303, 304, 307 (1.1.16, 1.0.13), or 308 (1.13.0). The parameter can be a positive or negative time.</p>
+<p>The time in the “Expires” field is computed as a sum of the current time and time specified in the directive. If the modified parameter is used (0.7.0, 0.6.32) then the time is computed as a sum of the file’s modification time and the time specified in the directive.</p>
+<p>In addition, it is possible to specify a time of day using the “&#64;” prefix (0.7.9, 0.6.34):</p>
+<p>expires &#64;15h30m;
+The contents of the “Cache-Control” field depends on the sign of the specified time:</p>
+<p>time is negative — “Cache-Control: no-cache”.
+time is positive or zero — “Cache-Control: max-age=t”, where t is a time specified in the directive, in seconds.
+The epoch parameter sets “Expires” to the value “Thu, 01 Jan 1970 00:00:01 GMT”, and “Cache-Control” to “no-cache”.</p>
+<p>The max parameter sets “Expires” to the value “Thu, 31 Dec 2037 23:55:55 GMT”, and “Cache-Control” to 10 years.</p>
+<p>The off parameter disables adding or modifying the “Expires” and “Cache-Control” response header fields.</p>
+<p>The last parameter value can contain variables (1.7.9):</p>
+<dl class="simple">
+<dt>map $sent_http_content_type $expires {</dt><dd><p>default         off;
+application/pdf 42d;
+~image/         max;</p>
+</dd>
+</dl>
+<p>}</p>
+<p>expires $expires;</p>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="config_auto_index.html" class="btn btn-neutral float-left" title="auto-index" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../variables/variables.html" class="btn btn-neutral float-right" title="Variable" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; 저작권 2022, flexus.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

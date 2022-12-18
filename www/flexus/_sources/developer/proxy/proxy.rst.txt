@@ -1,0 +1,782 @@
+Proxy Handling
+=======================
+
+1. HTTP 응답의 첫번째 라인이 잘못된 경우
+*********************************
+.. code-block:: yaml
+
+  HTTP/1.1 Test Test Test Test
+  Content-Length:0
+  Content-Type:text/html
+
+
+- 서버 로그에 오류를 남기고 그대로 클라이언트로 전송한다
+
+.. code-block:: shell
+
+    2022/07/05 03:52:19 [error] 25#25: *90 upstream sent no valid HTTP/1.0 header while reading response header
+    from upstream, client: 172.17.0.1, server: ,
+    request: "GET /site.txt HTTP/1.1", upstream: "http://192.168.65.2:1010/site.txt", host: "localhost"
+
+
+2. 응답의 헤더가 HTTP 규격에 맞지 않는 경우
+*****************************************
+
+.. code-block:: yaml
+
+  HTTP/1.1 200 OK
+  Content       Length:0
+  Content-Type:text/html
+
+
+- 502 Bad Gateway 오류 발생
+
+.. code-block:: html
+
+    <html>
+    <head><title>502 Bad Gateway</title></head>
+    <body>
+    <center><h1>502 Bad Gateway</h1></center>
+    <hr><center>nginx/1.21.4</center>
+    </body>
+    </html>
+
+
+
+3. Server 와 Date 헤더가 포함된 경우
+*********************************************
+.. code-block:: yaml
+
+  HTTP/1.1 200 OK
+  Server: flexus/1.0
+  Date: today
+
+- 헤더 값을 변경 한다.
+
+.. code-block:: shell
+
+  HTTP/1.1 200 OK
+  Server: nginx/1.21.4
+  Date: Tue, 05 Jul 2022 03:59:38 GMT
+
+4. Transfer-Encoding 헤더의 값이 이상한 경우
+*********************************************
+.. code-block:: yaml
+
+  HTTP/1.1 200 OK
+  Transfer-Encoding: nothing
+
+  ... data ...
+
+
+- Transfer-Encoding:chunked로 변경
+- 4096 바이트(4KB) 단위로 청크를 보냄
+
+.. code-block:: shell
+
+  HTTP/1.1 200 OK
+  Server: nginx/1.21.4
+  Transfer-Encoding: chunked
+
+  1000
+  ... data ...
+  1000
+  ... data ...
+  1000
+  ... data ...
+
+
+  0
+
+  EOF
+
+5. Tranfere-Encoding/Content-Length 헤더는 없지만 바디가 있는 경우
+*********************************************
+
+.. code-block:: go
+
+    package main
+
+    import (
+        "bytes"
+        "fmt"
+        "net"
+        "strconv"
+    )
+
+    func main() {
+        server, err := net.Listen("tcp", ":1010")
+        if nil != err {
+            fmt.Println(err)
+            return
+        }
+
+        defer server.Close()
+        fmt.Println("server started(1010).")
+
+        for {
+            conn, err := server.Accept()
+            if nil != err {
+                fmt.Println(err)
+                continue
+            }
+
+            var response bytes.Buffer
+            response.WriteString("HTTP/1.1 200 OK\r\n")
+            response.WriteString("Content-Type:text/html\r\n")
+            response.WriteString("\r\n")
+            _, err = conn.Write(response.Bytes())
+
+            for i := 0; i < 10000; i++ {
+                response.Reset()
+                response.WriteString(strconv.Itoa(i))
+                response.WriteString(": Hello\r\n")
+                _, err = conn.Write(response.Bytes())
+            }
+
+            conn.Close()
+        }
+    }
+
+
+
+.. code-block:: yaml
+
+  HTTP/1.1 200 OK
+  Content-Type: text/html
+
+  1: Hello
+  2: Hello
+  ...
+  9999: Hello
+
+
+- Transfer-Encoding:chunked 추가
+- 4096 바이트(4KB) 단위로 청크를 보냄
+
+.. code-block:: shell
+
+  HTTP/1.1 200 OK
+  Server: nginx/1.21.4
+  Transfer-Encoding: chunked
+
+  1000
+  1: Hello
+  2: Hello
+  ...
+  1000
+  9998: Hello
+  9999: Hello
+  0
+
+  EOF
+
+
+6. Content-Encoding 헤더의 값이 이상한 경우
+*********************************************
+.. code-block:: yaml
+
+  HTTP/1.1 200 OK
+  Content-Encoding: nothing
+
+  ... data ...
+
+
+- Transfer-Encoding:chunked 추가
+- Content-Encoding 헤더 삭제
+- 4096 바이트(4KB) 단위로 청크를 보냄
+
+.. code-block:: shell
+
+  HTTP/1.1 200 OK
+  Server: nginx/1.21.4
+  Transfer-Encoding: chunked
+
+  1000
+  ... data ...
+  1000
+  ... data ...
+  1000
+  ... data ...
+
+
+  0
+
+  EOF
+
+6. 응답 헤더를 보내는 중에 네트워크가 끊긴 경우
+*********************************************
+.. code-block:: yaml
+
+  HTTP/1.1 200 OK
+  Content-
+  EOF
+
+- 서버 로그를 남김
+.. code-block:: shell
+
+    2022/07/05 04:45:55 [error] 25#25: *122 upstream prematurely closed connection while reading
+    response header from upstream, client: 172.17.0.1, server:
+    , request: "GET /site.txt HTTP/1.1", upstream: "http://192.168.65.2:1010/site.txt",
+    host: "localhost">
+
+
+- 502 Bad Gateway 오류 발생
+
+.. code-block:: html
+
+    <html>
+    <head><title>502 Bad Gateway</title></head>
+    <body>
+    <center><h1>502 Bad Gateway</h1></center>
+    <hr><center>nginx/1.21.4</center>
+    </body>
+    </html>
+
+
+
+7. 응답 바디를 보내는 중에 네트워크가 끊긴 경우
+*********************************************
+.. code-block:: yaml
+
+  HTTP/1.1 200 OK
+  Content-Length: 100
+
+  Hello
+  EOF
+
+- 서버 로그를 남김
+.. code-block:: shell
+
+    2022/07/05 04:45:55 [error] 25#25: *122 upstream prematurely closed connection while reading
+    response header from upstream, client: 172.17.0.1, server:
+    , request: "GET /site.txt HTTP/1.1", upstream: "http://192.168.65.2:1010/site.txt",
+    host: "localhost">
+
+
+- 에러 없이 클라이언트로 전송함.
+
+.. code-block:: html
+
+    Hello
+    EOF
+
+8. chunked 인코딩이 잘못된 경우(Flush 이후 에러)
+*********************************************
+.. code-block:: go
+
+    package main
+
+    import (
+        "bytes"
+        "fmt"
+        "net"
+    )
+
+    func main() {
+        server, err := net.Listen("tcp", ":1010")
+        if nil != err {
+            fmt.Println(err)
+            return
+        }
+
+        defer server.Close()
+        fmt.Println("server started(1010).")
+
+        for {
+            conn, err := server.Accept()
+            if nil != err {
+                fmt.Println(err)
+                continue
+            }
+
+            var response bytes.Buffer
+            response.WriteString("HTTP/1.1 200 OK\r\n")
+            response.WriteString("Transfer-Encoding:chunked\r\n")
+            response.WriteString("\r\n")
+            for i := 0; i < 9000; i++ {
+                response.WriteString("5\r\nHello\r\n")
+            }
+            response.WriteString("TEST\r\n")
+            response.WriteString("0\r\n\r\n")
+
+            _, err = conn.Write(response.Bytes())
+            if nil != err {
+                fmt.Println(err)
+            }
+
+            conn.Close()
+        }
+    }
+
+
+.. code-block:: yaml
+
+  HTTP/1.1 200 OK
+  Transfer-Encoding: chunked
+
+  5
+  Hello
+  5
+  Hello
+  5
+  Hello
+  ....
+
+  TEST <----- 숫자가 와야 하는데 문자가 오는 경우
+  0
+  EOF
+
+- 서버 로그를 남김
+.. code-block:: shell
+
+    2022/07/05 07:02:47 [error] 25#25: *166 upstream sent invalid chunked response while
+    reading upstream, client: 172.17.0.1, server: , request: "GET /site.txt HTTP/1.1",
+    upstream: "http://192.168.65.2:1010/site.txt", host: "localhost"
+
+
+- 에러 없는 부분까지 클라이언트로 전송하고 끊어짐.
+
+.. code-block:: html
+
+    Hello....<more>
+    EOF
+
+9. chunked 인코딩이 잘못된 경우(Flush 이전 에러)
+*********************************************
+.. code-block:: go
+
+    package main
+
+    import (
+        "bytes"
+        "fmt"
+        "net"
+    )
+
+    func main() {
+        server, err := net.Listen("tcp", ":1010")
+        if nil != err {
+            fmt.Println(err)
+            return
+        }
+
+        defer server.Close()
+        fmt.Println("server started(1010).")
+
+        for {
+            conn, err := server.Accept()
+            if nil != err {
+                fmt.Println(err)
+                continue
+            }
+
+            var response bytes.Buffer
+            response.WriteString("HTTP/1.1 200 OK\r\n")
+            response.WriteString("Transfer-Encoding:chunked\r\n")
+            response.WriteString("\r\n")
+            response.WriteString("5\r\nHello\r\n")
+            response.WriteString("TEST\r\n")
+            response.WriteString("0\r\n\r\n")
+
+            _, err = conn.Write(response.Bytes())
+            if nil != err {
+                fmt.Println(err)
+            }
+
+            conn.Close()
+        }
+    }
+
+
+.. code-block:: yaml
+
+  HTTP/1.1 200 OK
+  Transfer-Encoding: chunked
+
+  5
+  Hello
+  TEST <----- 숫자가 와야 하는데 문자가 오는 경우
+  0
+  EOF
+
+- 서버 로그를 남김
+.. code-block:: shell
+
+    2022/07/05 07:02:47 [error] 25#25: *166 upstream sent invalid chunked response while
+    reading upstream, client: 172.17.0.1, server: , request: "GET /site.txt HTTP/1.1",
+    upstream: "http://192.168.65.2:1010/site.txt", host: "localhost"
+
+
+- 메시지 없이 그냥 끊어짐.
+
+.. code-block:: html
+
+    EOF
+
+
+
+10. Content-Length 보다 큰 바디를 보낸 경우
+*********************************************
+.. code-block:: go
+
+    package main
+
+    import (
+        "bytes"
+        "fmt"
+        "net"
+    )
+
+    func main() {
+        server, err := net.Listen("tcp", ":1010")
+        if nil != err {
+            fmt.Println(err)
+            return
+        }
+
+        defer server.Close()
+        fmt.Println("server started(1010).")
+
+        for {
+            conn, err := server.Accept()
+            if nil != err {
+                fmt.Println(err)
+                continue
+            }
+
+            var response bytes.Buffer
+            response.WriteString("HTTP/1.1 200 OK\r\n")
+            response.WriteString("Content-Length:5\r\n")
+            response.WriteString("\r\n")
+            response.WriteString("Hello")
+            response.WriteString("World")
+
+            _, err = conn.Write(response.Bytes())
+            if nil != err {
+                fmt.Println(err)
+            }
+
+            conn.Close()
+        }
+    }
+
+.. code-block:: yaml
+
+  HTTP/1.1 200 OK
+  Content-Length:5
+
+  HelloWorld
+  EOF
+
+- 서버 로그를 남김
+.. code-block:: shell
+
+    2022/07/05 07:26:09 [warn] 25#25: *190 upstream sent more data than specified in "Content-Length"
+    header while reading upstream, client: 172.17.0.1, server: , request: "GET /site.txt HTTP/1.1",
+    upstream: "http://192.168.65.2:1010/site.txt", host: "localhost"
+
+
+- Content-Length 만큼 클라이언트에 보냄.
+
+.. code-block:: html
+
+    Hello
+    EOF
+
+
+
+11. 사이즈가 큰 헤더를 보낸 경우
+*********************************************
+.. code-block:: go
+
+    package main
+
+    import (
+        "bytes"
+        "fmt"
+        "net"
+    )
+
+    func main() {
+        server, err := net.Listen("tcp", ":1010")
+        if nil != err {
+            fmt.Println(err)
+            return
+        }
+
+        defer server.Close()
+        fmt.Println("server started(1010).")
+
+        for {
+            conn, err := server.Accept()
+            if nil != err {
+                fmt.Println(err)
+                continue
+            }
+
+            var response bytes.Buffer
+            response.WriteString("HTTP/1.1 200 OK\r\n")
+            response.WriteString("Content-Length:5\r\n")
+            for i := 1; i < 1000; i++ {
+                response.WriteString("Header-Lower:abcdefghijklmnopqrstuvwxyz\r\n")
+                response.WriteString("Header-Upper:ABCDEFGHIJKLMNOPQRSTUVWXYZ\r\n")
+            }
+            response.WriteString("Hello")
+
+            _, err = conn.Write(response.Bytes())
+            if nil != err {
+                fmt.Println(err)
+            }
+
+            conn.Close()
+        }
+    }
+
+
+.. code-block:: yaml
+
+  HTTP/1.1 200 OK
+  Content-Length:5
+  Header-Lower:abcdefghijklmnopqrstuvwxyz
+  Header-Upper:ABCDEFGHIJKLMNOPQRSTUVWXYZ
+  ...
+
+  Hello
+  EOF
+
+- 서버 로그를 남김
+.. code-block:: shell
+
+    2022/07/05 07:31:42 [error] 25#25: *192 upstream sent too big header while reading
+    response header from upstream, client: 172.17.0.1, server: , request: "GET /site.txt HTTP/1.1",
+    upstream: "http://192.168.65.2:1010/site.txt", host: "localhost"
+
+
+- 502 Bad Gateway 오류 발생
+
+.. code-block:: html
+
+    <html>
+    <head><title>502 Bad Gateway</title></head>
+    <body>
+    <center><h1>502 Bad Gateway</h1></center>
+    <hr><center>nginx/1.21.4</center>
+    </body>
+    </html>
+
+
+12. 헤더를 받는 중에 타임 아웃이 발생한 경우
+*********************************************
+.. code-block:: go
+
+    package main
+
+    import (
+        "bytes"
+        "fmt"
+        "net"
+    )
+
+    func main() {
+        server, err := net.Listen("tcp", ":1010")
+        if nil != err {
+            fmt.Println(err)
+            return
+        }
+
+        defer server.Close()
+        fmt.Println("server started(1010).")
+
+        for {
+            conn, err := server.Accept()
+            if nil != err {
+                fmt.Println(err)
+                continue
+            }
+
+            var response bytes.Buffer
+            response.WriteString("HTTP/1.1 200 OK\r\n")
+            response.WriteString("Content-Length:5\r\n")
+            //response.WriteString("\r\n") // for timeout
+
+            _, err = conn.Write(response.Bytes())
+            if nil != err {
+                fmt.Println(err)
+            }
+
+            // conn.Close() // for timeout
+        }
+    }
+
+
+
+.. code-block:: yaml
+
+  HTTP/1.1 200 OK
+  Content-Length:5
+
+- 서버 로그를 남김
+.. code-block:: shell
+
+    2022/07/05 07:38:33 [error] 25#25: *194 upstream timed out (110: Connection timed out) while
+    reading response header from upstream, client: 172.17.0.1, server: ,
+    request: "GET /site.txt HTTP/1.1",
+    upstream: "http://192.168.65.2:1010/site.txt", host: "localhost"
+
+
+- 504 Gateway Time-out 오류 발생
+
+.. code-block:: html
+
+    <html>
+    <head><title>504 Gateway Time-out</title></head>
+    <body>
+    <center><h1>504 Gateway Time-out</h1></center>
+    <hr><center>nginx/1.21.4</center>
+    </body>
+    </html>
+
+
+13. 바디를 받는 중에 타임 아웃이 발생한 경우
+*********************************************
+.. code-block:: go
+
+    package main
+
+    import (
+        "bytes"
+        "fmt"
+        "net"
+    )
+
+    func main() {
+        server, err := net.Listen("tcp", ":1010")
+        if nil != err {
+            fmt.Println(err)
+            return
+        }
+
+        defer server.Close()
+        fmt.Println("server started(1010).")
+
+        for {
+            conn, err := server.Accept()
+            if nil != err {
+                fmt.Println(err)
+                continue
+            }
+
+            var response bytes.Buffer
+            response.WriteString("HTTP/1.1 200 OK\r\n")
+            response.WriteString("Content-Length:10\r\n")
+            response.WriteString("\r\n")
+            response.WriteString("Hello")
+            //response.WriteString("World") // for timeout
+
+            _, err = conn.Write(response.Bytes())
+            if nil != err {
+                fmt.Println(err)
+            }
+
+            // conn.Close() // for timeout
+        }
+    }
+
+
+.. code-block:: yaml
+
+  HTTP/1.1 200 OK
+  Content-Length:10
+  HelloWorld
+
+- 서버 로그를 남김
+.. code-block:: shell
+
+    2022/07/05 07:44:10 [error] 25#25: *196 upstream timed out (110: Connection timed out)
+    while reading upstream, client: 172.17.0.1, server: , request: "GET /site.txt HTTP/1.1",
+    upstream: "http://192.168.65.2:1010/site.txt", host: "localhost"
+
+
+- 헤더까지 내려오고 끊어짐.
+
+.. code-block:: html
+
+    HTTP/1.1 200 OK
+    Server: nginx/1.21.4
+    Date: Tue, 05 Jul 2022 07:49:21 GMT
+    Content-Length: 10
+    Connection: keep-alive
+
+    EOF
+
+
+13. Expect 헤더가 없는데도 HTTP/1.1 100 Continue 헤더를 내려주는 경우
+*********************************************************************
+.. code-block:: go
+
+    package main
+
+    import (
+        "bytes"
+        "fmt"
+        "net"
+    )
+
+    func main() {
+        server, err := net.Listen("tcp", ":1010")
+        if nil != err {
+            fmt.Println(err)
+            return
+        }
+
+        defer server.Close()
+        fmt.Println("server started(1010).")
+
+        for {
+            conn, err := server.Accept()
+            if nil != err {
+                fmt.Println(err)
+                continue
+            }
+
+            var response bytes.Buffer
+            response.WriteString("HTTP/1.1 100 Continue\r\n\r\n") // 임의로 추가함
+            response.WriteString("HTTP/1.1 200 OK\r\n")
+            response.WriteString("Content-Length:5\r\n")
+            response.WriteString("\r\n")
+            response.WriteString("Hello")
+
+            _, err = conn.Write(response.Bytes())
+            if nil != err {
+                fmt.Println(err)
+            }
+            conn.Close()
+        }
+    }
+
+
+- 응답 헤더가 이상하지만 에러 없이 처리되고, 브라우저에서는 정상적으로 보임
+
+.. code-block:: yaml
+
+    HTTP/1.1 100 Continue
+    Server: nginx/1.23.1
+    Date: Fri, 07 Oct 2022 03:42:45 GMT
+    Connection: close
+
+    HTTP/1.1 200 OK
+    Content-Length:5
+
+    HelloEOF
+
+
+- 브라우저에서는 응답 헤더로 Content-Length 만 보임.
+
+.. code-block:: yaml
+
+    Content-Length:5
+
+    HelloEOF
+
+- 브라우저에서 직접 http://localhost:1010 서버에 접속하면 오류 발생함.

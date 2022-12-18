@@ -1,0 +1,8 @@
+http : {
+    server[":80"] : {
+        file_server() : {
+            root   : "/Users/blueeyes/CLionProjects/openflexus/www";
+            browse : "true";
+        };
+    };
+};

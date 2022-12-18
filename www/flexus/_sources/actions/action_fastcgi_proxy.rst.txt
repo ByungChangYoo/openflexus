@@ -1,0 +1,23 @@
+fastcgi-proxy()
+=======================
+
+.. code-block:: yaml
+
+    http["80"] : {
+        auto-index:  "on";
+        host["*"] :  {
+            path["~^(.*)\.php$"] : {
+                fastcgi-proxy("http://localhost:9000") : {
+                    fastcgi-params :  {
+                         "GATEWAY_INTERFACE" : "CGI/1.1";
+                         "REQUEST_METHOD"  :  "${method}";
+                         "CONTENT_TYPE"  :  "${request:header:content-type}";
+                         "CONTENT_LENGTH"  :  "${request:header:content-length}";
+                         "SCRIPT_FILENAME" :  "${uri}";
+                    };
+                }
+            }
+        }
+    }
+
+

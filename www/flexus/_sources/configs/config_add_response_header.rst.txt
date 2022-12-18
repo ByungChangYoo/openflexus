@@ -1,0 +1,162 @@
+.. _add-response-header:
+add-response-header
+=====================
+
+.. code-block:: yaml
+
+    add-response-header[condition] : {
+        name : value;
+          …
+    }
+
+``add-response-header`` 설정은 응답 헤더를 추가한다.  "name : value" 형태로 응답 헤더를 추가할 수 있으며 다음 사항을 유념한다.
+
+1. 헤더 이름은 문자열이며HTTP/1.1 프로토콜에 정의한 유효한 문자만을 사용한다.
+2. 헤더 값은 문자열이며 HTTP/1.1 프로토콜에 정의한 유효한 문자만을 사용한다.
+
+.. note::
+
+    add-response-header 설정은 이름에서 알 수 있듯이 헤더를 추가만 하기 때문에 동일한 이름의 응답 헤더를 여러개 추가할 수 있다.
+    동일한 이름의 응답 헤더를 삭제하거나 변경하지 않기 때문에 사용에 주의해야 한다.
+
+
+기본적으로 아래 테이블에 기술한 응답 코드인 경우에만 헤더를 추가하고 `4xx`, `5xx` 응답 코드에는 헤더를 추가하지 않는다.
+
+.. csv-table::
+  :header: 응답 코드, 설명, 지원 버전
+  :widths: 1, 2, 1
+
+  200, Ok, 1.0
+  201, Created, 1.0
+  204, No Content, 1.0
+  206, Partial Content, 1.0
+  301, Moved Permanently, 1.0
+  302, Moved Temporarily, 1.0
+  303, See Other, 1.0
+  304, Not Modified, 1.0
+  307, Temporary Redirect, 1.0
+  308, Permanent Redirect, 1.0
+
+
+Declares
+----------
+
+.. tabs::
+
+   .. tab:: http
+
+    .. code-block:: none
+        :emphasize-lines: 2,3,4,5
+
+        http["80"] : {
+            add-response-header : {
+                "Access-Control-Allow-Origin" : "*";
+                "Access-Control-Allow-Credentials" : "true";
+            }
+        }
+
+    모든 HTTP 요청에 대해 응답 헤더를 추가한다.
+
+   .. tab:: host
+
+    .. code-block:: none
+        :emphasize-lines: 3,4,5,6
+
+        http["80"] : {
+            host["www.dalcomlab.com"] : {
+                add-response-header : {
+                    "Access-Control-Allow-Origin" : "*";
+                    "Access-Control-Allow-Credentials" : "true";
+                }
+            }
+            host["*"] : {
+
+            }
+        }
+
+    HTTP 요청중에 지정된 호스트(host)와 일치하는 요청에만 응답 헤더를 추가한다.
+
+   .. tab:: path
+
+    .. code-block:: none
+       :emphasize-lines: 4,5,6,7
+
+        http["80"] : {
+            host["*"] : {
+                path["/public"] : {
+                    add-response-header : {
+                        "Access-Control-Allow-Origin" : "*";
+                        "Access-Control-Allow-Credentials" : "true";
+                    }
+                }
+                path["/"] : {
+                }
+            }
+        }
+
+    HTTP 요청중에 지정된 경로(path)가 일치하는 요청에만 응답 헤더를 추가한다.
+
+
+Examples
+----------
+.. tabs::
+
+   .. tab:: curl
+
+      - config
+      .. code-block:: shell
+
+            $ curl http://localhost/
+
+      - request
+      .. code-block:: shell
+
+            $ curl http://localhost/
+
+      - response
+      .. code-block:: shell
+
+            $ curl http://localhost/
+
+   .. tab:: http
+
+      Pears are green.
+
+   .. tab:: Oranges
+
+      Oranges are orange.
+
+
+.. tabs::
+
+   .. tab:: config
+
+      .. code-block:: yaml
+
+        http["80"] : {
+            add-response-header : {
+                "Access-Control-Allow-Origin" : "*";
+                "Access-Control-Allow-Credentials" : "true";
+            }
+        }
+
+   .. tab:: request
+
+      .. code-block:: shell
+
+            $ curl http://localhost/
+
+   .. tab:: response
+
+      .. code-block:: shell
+
+            HTTP 2.0 OK
+            Server: flexus/1.0
+            Date: Thu, 07 Jul 2022 07:38:43 GMT
+            Access-Control-Allow-Origin: *
+            Access-Control-Allow-Credentials: true
+
+
+:ref:`add_response_header_off_if_error<add-response-header-off-if-error>` 참고 바람.
+
+          

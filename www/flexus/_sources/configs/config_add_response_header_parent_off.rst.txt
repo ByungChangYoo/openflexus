@@ -1,0 +1,62 @@
+.. _add-response-header-parent-off:
+add-response-header-parent-off
+==============================
+
+.. code-block:: yaml
+
+    add-response-header-parent-off : "true or false";
+
+add-response-header-parent-offr 설정은 응답 헤더를 추가한다.  "name : value" 형태로 응답 헤더를 추가할 수 있으며 다음 사항을 유념한다.
+
+1. 헤더 이름은 문자열이며HTTP/1.1 프로토콜에 정의한 유효한 문자만을 사용한다.
+2. 헤더 값은 문자열이며 HTTP/1.1 프로토콜에 정의한 유효한 문자만을 사용한다.
+
+.. note::
+
+    add-response-header 설정은 이름에서 알 수 있듯이 헤더를 추가만 하기 때문에 동일한 이름의 응답 헤더를 여러개 추가할 수 있다.
+    동일한 이름의 응답 헤더를 삭제하거나 변경하지 않기 때문에 사용에 주의해야 한다.
+
+
+.. code-block:: yaml
+
+    http["80"] : {
+        add-response-header : {
+            "a" : "b";
+            "b" : "c";
+        }
+    }
+
+안녕하세요
+
+.. tabs::
+
+   .. tab:: curl
+
+      .. code-block:: shell
+
+            $ curl http://localhost/
+
+   .. tab:: http
+
+      Pears are green.
+
+   .. tab:: Oranges
+
+      Oranges are orange.
+
+Statistics
+----------
+
+This filter has a statistics tree rooted at *http_inspector* with the following statistics:
+
+.. csv-table::
+  :header: Name, Type, Description
+  :widths: 1, 1, 2
+
+  read_error, Counter, Total read errors
+  http10_found, Counter, Total number of times HTTP/1.0 was found
+  http11_found, Counter, Total number of times HTTP/1.1 was found
+  http2_found, Counter, Total number of times HTTP/2 was found
+  http_not_found, Counter, Total number of times HTTP protocol was not found
+
+          

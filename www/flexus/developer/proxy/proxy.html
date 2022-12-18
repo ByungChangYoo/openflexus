@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="ko" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Proxy Handling &mdash; flexus 1.0 문서</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/copybutton.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/theme_overrides.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/tabs.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/clipboard.min.js"></script>
+        <script src="../../_static/copybutton.js"></script>
+        <script src="../../_static/translations.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="author" title="이 문서 정보" href="../../about.html" />
+    <link rel="index" title="색인" href="../../genindex.html" />
+    <link rel="search" title="검색" href="../../search.html" />
+    <link rel="next" title="SystemCtl" href="../systemctl/systemctl.html" />
+    <link rel="prev" title="Request Header Handling" href="../request/request_header.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> flexus
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../about.html">About</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Install</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../actions/actions.html">Action</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../configs/configs.html">Config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../variables/variables.html">Variable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../functions/functions.html">Funtion</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../developer.html">Developer</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../request/request_header.html">Request Header Handling</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Proxy Handling</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#http">1. HTTP 응답의 첫번째 라인이 잘못된 경우</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id1">2. 응답의 헤더가 HTTP 규격에 맞지 않는 경우</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#server-date">3. Server 와 Date 헤더가 포함된 경우</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#transfer-encoding">4. Transfer-Encoding 헤더의 값이 이상한 경우</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tranfere-encoding-content-length">5. Tranfere-Encoding/Content-Length 헤더는 없지만 바디가 있는 경우</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#content-encoding">6. Content-Encoding 헤더의 값이 이상한 경우</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id2">6. 응답 헤더를 보내는 중에 네트워크가 끊긴 경우</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id3">7. 응답 바디를 보내는 중에 네트워크가 끊긴 경우</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#chunked-flush">8. chunked 인코딩이 잘못된 경우(Flush 이후 에러)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id4">9. chunked 인코딩이 잘못된 경우(Flush 이전 에러)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#content-length">10. Content-Length 보다 큰 바디를 보낸 경우</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id5">11. 사이즈가 큰 헤더를 보낸 경우</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id6">12. 헤더를 받는 중에 타임 아웃이 발생한 경우</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id7">13. 바디를 받는 중에 타임 아웃이 발생한 경우</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#expect-http-1-1-100-continue">13. Expect 헤더가 없는데도 HTTP/1.1 100 Continue 헤더를 내려주는 경우</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../systemctl/systemctl.html">SystemCtl</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">flexus</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../developer.html">Developer</a> &raquo;</li>
+      <li>Proxy Handling</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/developer/proxy/proxy.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="proxy-handling">
+<h1>Proxy Handling<a class="headerlink" href="#proxy-handling" title="이 제목에 대한 퍼머링크"></a></h1>
+<section id="http">
+<h2>1. HTTP 응답의 첫번째 라인이 잘못된 경우<a class="headerlink" href="#http" title="이 제목에 대한 퍼머링크"></a></h2>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">HTTP/1.1 Test Test Test Test</span><span class="w"></span>
+<span class="l l-Scalar l-Scalar-Plain">Content-Length:0</span><span class="w"></span>
+<span class="l l-Scalar l-Scalar-Plain">Content-Type:text/html</span><span class="w"></span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>서버 로그에 오류를 남기고 그대로 클라이언트로 전송한다</p></li>
+</ul>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="m">2022</span>/07/05 <span class="m">03</span>:52:19 <span class="o">[</span>error<span class="o">]</span> <span class="m">25</span><span class="c1">#25: *90 upstream sent no valid HTTP/1.0 header while reading response header</span>
+from upstream, client: <span class="m">172</span>.17.0.1, server: ,
+request: <span class="s2">&quot;GET /site.txt HTTP/1.1&quot;</span>, upstream: <span class="s2">&quot;http://192.168.65.2:1010/site.txt&quot;</span>, host: <span class="s2">&quot;localhost&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="id1">
+<h2>2. 응답의 헤더가 HTTP 규격에 맞지 않는 경우<a class="headerlink" href="#id1" title="이 제목에 대한 퍼머링크"></a></h2>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">HTTP/1.1 200 OK</span><span class="w"></span>
+<span class="l l-Scalar l-Scalar-Plain">Content       Length:0</span><span class="w"></span>
+<span class="l l-Scalar l-Scalar-Plain">Content-Type:text/html</span><span class="w"></span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>502 Bad Gateway 오류 발생</p></li>
+</ul>
+<div class="highlight-html notranslate"><div class="highlight"><pre><span></span><span class="p">&lt;</span><span class="nt">html</span><span class="p">&gt;</span>
+<span class="p">&lt;</span><span class="nt">head</span><span class="p">&gt;&lt;</span><span class="nt">title</span><span class="p">&gt;</span>502 Bad Gateway<span class="p">&lt;/</span><span class="nt">title</span><span class="p">&gt;&lt;/</span><span class="nt">head</span><span class="p">&gt;</span>
+<span class="p">&lt;</span><span class="nt">body</span><span class="p">&gt;</span>
+<span class="p">&lt;</span><span class="nt">center</span><span class="p">&gt;&lt;</span><span class="nt">h1</span><span class="p">&gt;</span>502 Bad Gateway<span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;&lt;/</span><span class="nt">center</span><span class="p">&gt;</span>
+<span class="p">&lt;</span><span class="nt">hr</span><span class="p">&gt;&lt;</span><span class="nt">center</span><span class="p">&gt;</span>nginx/1.21.4<span class="p">&lt;/</span><span class="nt">center</span><span class="p">&gt;</span>
+<span class="p">&lt;/</span><span class="nt">body</span><span class="p">&gt;</span>
+<span class="p">&lt;/</span><span class="nt">html</span><span class="p">&gt;</span>
+</pre></div>
+</div>
+</section>
+<section id="server-date">
+<h2>3. Server 와 Date 헤더가 포함된 경우<a class="headerlink" href="#server-date" title="이 제목에 대한 퍼머링크"></a></h2>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">HTTP/1.1 200 OK</span><span class="w"></span>
+<span class="l l-Scalar l-Scalar-Plain">Server</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">flexus/1.0</span><span class="w"></span>
+<span class="nt">Date</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">today</span><span class="w"></span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>헤더 값을 변경 한다.</p></li>
+</ul>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>HTTP/1.1 <span class="m">200</span> OK
+Server: nginx/1.21.4
+Date: Tue, <span class="m">05</span> Jul <span class="m">2022</span> <span class="m">03</span>:59:38 GMT
+</pre></div>
+</div>
+</section>
+<section id="transfer-encoding">
+<h2>4. Transfer-Encoding 헤더의 값이 이상한 경우<a class="headerlink" href="#transfer-encoding" title="이 제목에 대한 퍼머링크"></a></h2>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">HTTP/1.1 200 OK</span><span class="w"></span>
+<span class="l l-Scalar l-Scalar-Plain">Transfer-Encoding</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">nothing</span><span class="w"></span>
+
+<span class="nn">...</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">data ...</span><span class="w"></span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>Transfer-Encoding:chunked로 변경</p></li>
+<li><p>4096 바이트(4KB) 단위로 청크를 보냄</p></li>
+</ul>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>HTTP/1.1 <span class="m">200</span> OK
+Server: nginx/1.21.4
+Transfer-Encoding: chunked
+
+<span class="m">1000</span>
+... data ...
+<span class="m">1000</span>
+... data ...
+<span class="m">1000</span>
+... data ...
+
+
+<span class="m">0</span>
+
+EOF
+</pre></div>
+</div>
+</section>
+<section id="tranfere-encoding-content-length">
+<h2>5. Tranfere-Encoding/Content-Length 헤더는 없지만 바디가 있는 경우<a class="headerlink" href="#tranfere-encoding-content-length" title="이 제목에 대한 퍼머링크"></a></h2>
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="kn">package</span><span class="w"> </span><span class="nx">main</span><span class="w"></span>
+
+<span class="kn">import</span><span class="w"> </span><span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="s">&quot;bytes&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="s">&quot;fmt&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="s">&quot;net&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="s">&quot;strconv&quot;</span><span class="w"></span>
+<span class="p">)</span><span class="w"></span>
+
+<span class="kd">func</span><span class="w"> </span><span class="nx">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nx">server</span><span class="p">,</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">net</span><span class="p">.</span><span class="nx">Listen</span><span class="p">(</span><span class="s">&quot;tcp&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;:1010&quot;</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="kc">nil</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="nx">fmt</span><span class="p">.</span><span class="nx">Println</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="k">return</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">defer</span><span class="w"> </span><span class="nx">server</span><span class="p">.</span><span class="nx">Close</span><span class="p">()</span><span class="w"></span>
+<span class="w">    </span><span class="nx">fmt</span><span class="p">.</span><span class="nx">Println</span><span class="p">(</span><span class="s">&quot;server started(1010).&quot;</span><span class="p">)</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="nx">conn</span><span class="p">,</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">server</span><span class="p">.</span><span class="nx">Accept</span><span class="p">()</span><span class="w"></span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="kc">nil</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="nx">fmt</span><span class="p">.</span><span class="nx">Println</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span><span class="w"></span>
+<span class="w">            </span><span class="k">continue</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">        </span><span class="kd">var</span><span class="w"> </span><span class="nx">response</span><span class="w"> </span><span class="nx">bytes</span><span class="p">.</span><span class="nx">Buffer</span><span class="w"></span>
+<span class="w">        </span><span class="nx">response</span><span class="p">.</span><span class="nx">WriteString</span><span class="p">(</span><span class="s">&quot;HTTP/1.1 200 OK\r\n&quot;</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="nx">response</span><span class="p">.</span><span class="nx">WriteString</span><span class="p">(</span><span class="s">&quot;Content-Type:text/html\r\n&quot;</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="nx">response</span><span class="p">.</span><span class="nx">WriteString</span><span class="p">(</span><span class="s">&quot;\r\n&quot;</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="nx">_</span><span class="p">,</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nx">conn</span><span class="p">.</span><span class="nx">Write</span><span class="p">(</span><span class="nx">response</span><span class="p">.</span><span class="nx">Bytes</span><span class="p">())</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="nx">i</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="nx">i</span><span class="w"> </span><span class="p">&lt;</span><span class="w"> </span><span class="mi">10000</span><span class="p">;</span><span class="w"> </span><span class="nx">i</span><span class="o">++</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="nx">response</span><span class="p">.</span><span class="nx">Reset</span><span class="p">()</span><span class="w"></span>
+<span class="w">            </span><span class="nx">response</span><span class="p">.</span><span class="nx">WriteString</span><span class="p">(</span><span class="nx">strconv</span><span class="p">.</span><span class="nx">Itoa</span><span class="p">(</span><span class="nx">i</span><span class="p">))</span><span class="w"></span>
+<span class="w">            </span><span class="nx">response</span><span class="p">.</span><span class="nx">WriteString</span><span class="p">(</span><span class="s">&quot;: Hello\r\n&quot;</span><span class="p">)</span><span class="w"></span>
+<span class="w">            </span><span class="nx">_</span><span class="p">,</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nx">conn</span><span class="p">.</span><span class="nx">Write</span><span class="p">(</span><span class="nx">response</span><span class="p">.</span><span class="nx">Bytes</span><span class="p">())</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">        </span><span class="nx">conn</span><span class="p">.</span><span class="nx">Close</span><span class="p">()</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">HTTP/1.1 200 OK</span><span class="w"></span>
+<span class="l l-Scalar l-Scalar-Plain">Content-Type</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">text/html</span><span class="w"></span>
+
+<span class="nt">1</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Hello</span><span class="w"></span>
+<span class="nt">2</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Hello</span><span class="w"></span>
+<span class="nn">...</span><span class="w"></span>
+<span class="nt">9999</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Hello</span><span class="w"></span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>Transfer-Encoding:chunked 추가</p></li>
+<li><p>4096 바이트(4KB) 단위로 청크를 보냄</p></li>
+</ul>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>HTTP/1.1 <span class="m">200</span> OK
+Server: nginx/1.21.4
+Transfer-Encoding: chunked
+
+<span class="m">1000</span>
+<span class="m">1</span>: Hello
+<span class="m">2</span>: Hello
+...
+<span class="m">1000</span>
+<span class="m">9998</span>: Hello
+<span class="m">9999</span>: Hello
+<span class="m">0</span>
+
+EOF
+</pre></div>
+</div>
+</section>
+<section id="content-encoding">
+<h2>6. Content-Encoding 헤더의 값이 이상한 경우<a class="headerlink" href="#content-encoding" title="이 제목에 대한 퍼머링크"></a></h2>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">HTTP/1.1 200 OK</span><span class="w"></span>
+<span class="l l-Scalar l-Scalar-Plain">Content-Encoding</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">nothing</span><span class="w"></span>
+
+<span class="nn">...</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">data ...</span><span class="w"></span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>Transfer-Encoding:chunked 추가</p></li>
+<li><p>Content-Encoding 헤더 삭제</p></li>
+<li><p>4096 바이트(4KB) 단위로 청크를 보냄</p></li>
+</ul>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>HTTP/1.1 <span class="m">200</span> OK
+Server: nginx/1.21.4
+Transfer-Encoding: chunked
+
+<span class="m">1000</span>
+... data ...
+<span class="m">1000</span>
+... data ...
+<span class="m">1000</span>
+... data ...
+
+
+<span class="m">0</span>
+
+EOF
+</pre></div>
+</div>
+</section>
+<section id="id2">
+<h2>6. 응답 헤더를 보내는 중에 네트워크가 끊긴 경우<a class="headerlink" href="#id2" title="이 제목에 대한 퍼머링크"></a></h2>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">HTTP/1.1 200 OK</span><span class="w"></span>
+<span class="l l-Scalar l-Scalar-Plain">Content-</span><span class="w"></span>
+<span class="l l-Scalar l-Scalar-Plain">EOF</span><span class="w"></span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>서버 로그를 남김</p></li>
+</ul>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="m">2022</span>/07/05 <span class="m">04</span>:45:55 <span class="o">[</span>error<span class="o">]</span> <span class="m">25</span><span class="c1">#25: *122 upstream prematurely closed connection while reading</span>
+response header from upstream, client: <span class="m">172</span>.17.0.1, server:
+, request: <span class="s2">&quot;GET /site.txt HTTP/1.1&quot;</span>, upstream: <span class="s2">&quot;http://192.168.65.2:1010/site.txt&quot;</span>,
+host: <span class="s2">&quot;localhost&quot;</span>&gt;
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>502 Bad Gateway 오류 발생</p></li>
+</ul>
+<div class="highlight-html notranslate"><div class="highlight"><pre><span></span><span class="p">&lt;</span><span class="nt">html</span><span class="p">&gt;</span>
+<span class="p">&lt;</span><span class="nt">head</span><span class="p">&gt;&lt;</span><span class="nt">title</span><span class="p">&gt;</span>502 Bad Gateway<span class="p">&lt;/</span><span class="nt">title</span><span class="p">&gt;&lt;/</span><span class="nt">head</span><span class="p">&gt;</span>
+<span class="p">&lt;</span><span class="nt">body</span><span class="p">&gt;</span>
+<span class="p">&lt;</span><span class="nt">center</span><span class="p">&gt;&lt;</span><span class="nt">h1</span><span class="p">&gt;</span>502 Bad Gateway<span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;&lt;/</span><span class="nt">center</span><span class="p">&gt;</span>
+<span class="p">&lt;</span><span class="nt">hr</span><span class="p">&gt;&lt;</span><span class="nt">center</span><span class="p">&gt;</span>nginx/1.21.4<span class="p">&lt;/</span><span class="nt">center</span><span class="p">&gt;</span>
+<span class="p">&lt;/</span><span class="nt">body</span><span class="p">&gt;</span>
+<span class="p">&lt;/</span><span class="nt">html</span><span class="p">&gt;</span>
+</pre></div>
+</div>
+</section>
+<section id="id3">
+<h2>7. 응답 바디를 보내는 중에 네트워크가 끊긴 경우<a class="headerlink" href="#id3" title="이 제목에 대한 퍼머링크"></a></h2>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">HTTP/1.1 200 OK</span><span class="w"></span>
+<span class="l l-Scalar l-Scalar-Plain">Content-Length</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">100</span><span class="w"></span>
+
+<span class="l l-Scalar l-Scalar-Plain">Hello</span><span class="w"></span>
+<span class="l l-Scalar l-Scalar-Plain">EOF</span><span class="w"></span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>서버 로그를 남김</p></li>
+</ul>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="m">2022</span>/07/05 <span class="m">04</span>:45:55 <span class="o">[</span>error<span class="o">]</span> <span class="m">25</span><span class="c1">#25: *122 upstream prematurely closed connection while reading</span>
+response header from upstream, client: <span class="m">172</span>.17.0.1, server:
+, request: <span class="s2">&quot;GET /site.txt HTTP/1.1&quot;</span>, upstream: <span class="s2">&quot;http://192.168.65.2:1010/site.txt&quot;</span>,
+host: <span class="s2">&quot;localhost&quot;</span>&gt;
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>에러 없이 클라이언트로 전송함.</p></li>
+</ul>
+<div class="highlight-html notranslate"><div class="highlight"><pre><span></span>Hello
+EOF
+</pre></div>
+</div>
+</section>
+<section id="chunked-flush">
+<h2>8. chunked 인코딩이 잘못된 경우(Flush 이후 에러)<a class="headerlink" href="#chunked-flush" title="이 제목에 대한 퍼머링크"></a></h2>
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="kn">package</span><span class="w"> </span><span class="nx">main</span><span class="w"></span>
+
+<span class="kn">import</span><span class="w"> </span><span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="s">&quot;bytes&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="s">&quot;fmt&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="s">&quot;net&quot;</span><span class="w"></span>
+<span class="p">)</span><span class="w"></span>
+
+<span class="kd">func</span><span class="w"> </span><span class="nx">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nx">server</span><span class="p">,</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">net</span><span class="p">.</span><span class="nx">Listen</span><span class="p">(</span><span class="s">&quot;tcp&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;:1010&quot;</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="kc">nil</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="nx">fmt</span><span class="p">.</span><span class="nx">Println</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="k">return</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">defer</span><span class="w"> </span><span class="nx">server</span><span class="p">.</span><span class="nx">Close</span><span class="p">()</span><span class="w"></span>
+<span class="w">    </span><span class="nx">fmt</span><span class="p">.</span><span class="nx">Println</span><span class="p">(</span><span class="s">&quot;server started(1010).&quot;</span><span class="p">)</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="nx">conn</span><span class="p">,</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">server</span><span class="p">.</span><span class="nx">Accept</span><span class="p">()</span><span class="w"></span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="kc">nil</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="nx">fmt</span><span class="p">.</span><span class="nx">Println</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span><span class="w"></span>
+<span class="w">            </span><span class="k">continue</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">        </span><span class="kd">var</span><span class="w"> </span><span class="nx">response</span><span class="w"> </span><span class="nx">bytes</span><span class="p">.</span><span class="nx">Buffer</span><span class="w"></span>
+<span class="w">        </span><span class="nx">response</span><span class="p">.</span><span class="nx">WriteString</span><span class="p">(</span><span class="s">&quot;HTTP/1.1 200 OK\r\n&quot;</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="nx">response</span><span class="p">.</span><span class="nx">WriteString</span><span class="p">(</span><span class="s">&quot;Transfer-Encoding:chunked\r\n&quot;</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="nx">response</span><span class="p">.</span><span class="nx">WriteString</span><span class="p">(</span><span class="s">&quot;\r\n&quot;</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="nx">i</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="nx">i</span><span class="w"> </span><span class="p">&lt;</span><span class="w"> </span><span class="mi">9000</span><span class="p">;</span><span class="w"> </span><span class="nx">i</span><span class="o">++</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="nx">response</span><span class="p">.</span><span class="nx">WriteString</span><span class="p">(</span><span class="s">&quot;5\r\nHello\r\n&quot;</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="nx">response</span><span class="p">.</span><span class="nx">WriteString</span><span class="p">(</span><span class="s">&quot;TEST\r\n&quot;</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="nx">response</span><span class="p">.</span><span class="nx">WriteString</span><span class="p">(</span><span class="s">&quot;0\r\n\r\n&quot;</span><span class="p">)</span><span class="w"></span>
+
+<span class="w">        </span><span class="nx">_</span><span class="p">,</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nx">conn</span><span class="p">.</span><span class="nx">Write</span><span class="p">(</span><span class="nx">response</span><span class="p">.</span><span class="nx">Bytes</span><span class="p">())</span><span class="w"></span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="kc">nil</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="nx">fmt</span><span class="p">.</span><span class="nx">Println</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">        </span><span class="nx">conn</span><span class="p">.</span><span class="nx">Close</span><span class="p">()</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">HTTP/1.1 200 OK</span><span class="w"></span>
+<span class="l l-Scalar l-Scalar-Plain">Transfer-Encoding</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">chunked</span><span class="w"></span>
+
+<span class="l l-Scalar l-Scalar-Plain">5</span><span class="w"></span>
+<span class="l l-Scalar l-Scalar-Plain">Hello</span><span class="w"></span>
+<span class="l l-Scalar l-Scalar-Plain">5</span><span class="w"></span>
+<span class="l l-Scalar l-Scalar-Plain">Hello</span><span class="w"></span>
+<span class="l l-Scalar l-Scalar-Plain">5</span><span class="w"></span>
+<span class="l l-Scalar l-Scalar-Plain">Hello</span><span class="w"></span>
+<span class="l l-Scalar l-Scalar-Plain">....</span><span class="w"></span>
+
+<span class="l l-Scalar l-Scalar-Plain">TEST &lt;----- 숫자가 와야 하는데 문자가 오는 경우</span><span class="w"></span>
+<span class="l l-Scalar l-Scalar-Plain">0</span><span class="w"></span>
+<span class="l l-Scalar l-Scalar-Plain">EOF</span><span class="w"></span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>서버 로그를 남김</p></li>
+</ul>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="m">2022</span>/07/05 <span class="m">07</span>:02:47 <span class="o">[</span>error<span class="o">]</span> <span class="m">25</span><span class="c1">#25: *166 upstream sent invalid chunked response while</span>
+reading upstream, client: <span class="m">172</span>.17.0.1, server: , request: <span class="s2">&quot;GET /site.txt HTTP/1.1&quot;</span>,
+upstream: <span class="s2">&quot;http://192.168.65.2:1010/site.txt&quot;</span>, host: <span class="s2">&quot;localhost&quot;</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>에러 없는 부분까지 클라이언트로 전송하고 끊어짐.</p></li>
+</ul>
+<div class="highlight-html notranslate"><div class="highlight"><pre><span></span>Hello....<span class="p">&lt;</span><span class="nt">more</span><span class="p">&gt;</span>
+EOF
+</pre></div>
+</div>
+</section>
+<section id="id4">
+<h2>9. chunked 인코딩이 잘못된 경우(Flush 이전 에러)<a class="headerlink" href="#id4" title="이 제목에 대한 퍼머링크"></a></h2>
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="kn">package</span><span class="w"> </span><span class="nx">main</span><span class="w"></span>
+
+<span class="kn">import</span><span class="w"> </span><span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="s">&quot;bytes&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="s">&quot;fmt&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="s">&quot;net&quot;</span><span class="w"></span>
+<span class="p">)</span><span class="w"></span>
+
+<span class="kd">func</span><span class="w"> </span><span class="nx">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nx">server</span><span class="p">,</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">net</span><span class="p">.</span><span class="nx">Listen</span><span class="p">(</span><span class="s">&quot;tcp&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;:1010&quot;</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="kc">nil</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="nx">fmt</span><span class="p">.</span><span class="nx">Println</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="k">return</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">defer</span><span class="w"> </span><span class="nx">server</span><span class="p">.</span><span class="nx">Close</span><span class="p">()</span><span class="w"></span>
+<span class="w">    </span><span class="nx">fmt</span><span class="p">.</span><span class="nx">Println</span><span class="p">(</span><span class="s">&quot;server started(1010).&quot;</span><span class="p">)</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="nx">conn</span><span class="p">,</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">server</span><span class="p">.</span><span class="nx">Accept</span><span class="p">()</span><span class="w"></span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="kc">nil</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="nx">fmt</span><span class="p">.</span><span class="nx">Println</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span><span class="w"></span>
+<span class="w">            </span><span class="k">continue</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">        </span><span class="kd">var</span><span class="w"> </span><span class="nx">response</span><span class="w"> </span><span class="nx">bytes</span><span class="p">.</span><span class="nx">Buffer</span><span class="w"></span>
+<span class="w">        </span><span class="nx">response</span><span class="p">.</span><span class="nx">WriteString</span><span class="p">(</span><span class="s">&quot;HTTP/1.1 200 OK\r\n&quot;</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="nx">response</span><span class="p">.</span><span class="nx">WriteString</span><span class="p">(</span><span class="s">&quot;Transfer-Encoding:chunked\r\n&quot;</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="nx">response</span><span class="p">.</span><span class="nx">WriteString</span><span class="p">(</span><span class="s">&quot;\r\n&quot;</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="nx">response</span><span class="p">.</span><span class="nx">WriteString</span><span class="p">(</span><span class="s">&quot;5\r\nHello\r\n&quot;</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="nx">response</span><span class="p">.</span><span class="nx">WriteString</span><span class="p">(</span><span class="s">&quot;TEST\r\n&quot;</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="nx">response</span><span class="p">.</span><span class="nx">WriteString</span><span class="p">(</span><span class="s">&quot;0\r\n\r\n&quot;</span><span class="p">)</span><span class="w"></span>
+
+<span class="w">        </span><span class="nx">_</span><span class="p">,</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nx">conn</span><span class="p">.</span><span class="nx">Write</span><span class="p">(</span><span class="nx">response</span><span class="p">.</span><span class="nx">Bytes</span><span class="p">())</span><span class="w"></span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="kc">nil</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="nx">fmt</span><span class="p">.</span><span class="nx">Println</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">        </span><span class="nx">conn</span><span class="p">.</span><span class="nx">Close</span><span class="p">()</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">HTTP/1.1 200 OK</span><span class="w"></span>
+<span class="l l-Scalar l-Scalar-Plain">Transfer-Encoding</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">chunked</span><span class="w"></span>
+
+<span class="l l-Scalar l-Scalar-Plain">5</span><span class="w"></span>
+<span class="l l-Scalar l-Scalar-Plain">Hello</span><span class="w"></span>
+<span class="l l-Scalar l-Scalar-Plain">TEST &lt;----- 숫자가 와야 하는데 문자가 오는 경우</span><span class="w"></span>
+<span class="l l-Scalar l-Scalar-Plain">0</span><span class="w"></span>
+<span class="l l-Scalar l-Scalar-Plain">EOF</span><span class="w"></span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>서버 로그를 남김</p></li>
+</ul>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="m">2022</span>/07/05 <span class="m">07</span>:02:47 <span class="o">[</span>error<span class="o">]</span> <span class="m">25</span><span class="c1">#25: *166 upstream sent invalid chunked response while</span>
+reading upstream, client: <span class="m">172</span>.17.0.1, server: , request: <span class="s2">&quot;GET /site.txt HTTP/1.1&quot;</span>,
+upstream: <span class="s2">&quot;http://192.168.65.2:1010/site.txt&quot;</span>, host: <span class="s2">&quot;localhost&quot;</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>메시지 없이 그냥 끊어짐.</p></li>
+</ul>
+<div class="highlight-html notranslate"><div class="highlight"><pre><span></span>EOF
+</pre></div>
+</div>
+</section>
+<section id="content-length">
+<h2>10. Content-Length 보다 큰 바디를 보낸 경우<a class="headerlink" href="#content-length" title="이 제목에 대한 퍼머링크"></a></h2>
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="kn">package</span><span class="w"> </span><span class="nx">main</span><span class="w"></span>
+
+<span class="kn">import</span><span class="w"> </span><span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="s">&quot;bytes&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="s">&quot;fmt&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="s">&quot;net&quot;</span><span class="w"></span>
+<span class="p">)</span><span class="w"></span>
+
+<span class="kd">func</span><span class="w"> </span><span class="nx">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nx">server</span><span class="p">,</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">net</span><span class="p">.</span><span class="nx">Listen</span><span class="p">(</span><span class="s">&quot;tcp&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;:1010&quot;</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="kc">nil</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="nx">fmt</span><span class="p">.</span><span class="nx">Println</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="k">return</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">defer</span><span class="w"> </span><span class="nx">server</span><span class="p">.</span><span class="nx">Close</span><span class="p">()</span><span class="w"></span>
+<span class="w">    </span><span class="nx">fmt</span><span class="p">.</span><span class="nx">Println</span><span class="p">(</span><span class="s">&quot;server started(1010).&quot;</span><span class="p">)</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="nx">conn</span><span class="p">,</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">server</span><span class="p">.</span><span class="nx">Accept</span><span class="p">()</span><span class="w"></span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="kc">nil</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="nx">fmt</span><span class="p">.</span><span class="nx">Println</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span><span class="w"></span>
+<span class="w">            </span><span class="k">continue</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">        </span><span class="kd">var</span><span class="w"> </span><span class="nx">response</span><span class="w"> </span><span class="nx">bytes</span><span class="p">.</span><span class="nx">Buffer</span><span class="w"></span>
+<span class="w">        </span><span class="nx">response</span><span class="p">.</span><span class="nx">WriteString</span><span class="p">(</span><span class="s">&quot;HTTP/1.1 200 OK\r\n&quot;</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="nx">response</span><span class="p">.</span><span class="nx">WriteString</span><span class="p">(</span><span class="s">&quot;Content-Length:5\r\n&quot;</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="nx">response</span><span class="p">.</span><span class="nx">WriteString</span><span class="p">(</span><span class="s">&quot;\r\n&quot;</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="nx">response</span><span class="p">.</span><span class="nx">WriteString</span><span class="p">(</span><span class="s">&quot;Hello&quot;</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="nx">response</span><span class="p">.</span><span class="nx">WriteString</span><span class="p">(</span><span class="s">&quot;World&quot;</span><span class="p">)</span><span class="w"></span>
+
+<span class="w">        </span><span class="nx">_</span><span class="p">,</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nx">conn</span><span class="p">.</span><span class="nx">Write</span><span class="p">(</span><span class="nx">response</span><span class="p">.</span><span class="nx">Bytes</span><span class="p">())</span><span class="w"></span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="kc">nil</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="nx">fmt</span><span class="p">.</span><span class="nx">Println</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">        </span><span class="nx">conn</span><span class="p">.</span><span class="nx">Close</span><span class="p">()</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">HTTP/1.1 200 OK</span><span class="w"></span>
+<span class="l l-Scalar l-Scalar-Plain">Content-Length:5</span><span class="w"></span>
+
+<span class="l l-Scalar l-Scalar-Plain">HelloWorld</span><span class="w"></span>
+<span class="l l-Scalar l-Scalar-Plain">EOF</span><span class="w"></span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>서버 로그를 남김</p></li>
+</ul>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="m">2022</span>/07/05 <span class="m">07</span>:26:09 <span class="o">[</span>warn<span class="o">]</span> <span class="m">25</span><span class="c1">#25: *190 upstream sent more data than specified in &quot;Content-Length&quot;</span>
+header <span class="k">while</span> reading upstream, client: <span class="m">172</span>.17.0.1, server: , request: <span class="s2">&quot;GET /site.txt HTTP/1.1&quot;</span>,
+upstream: <span class="s2">&quot;http://192.168.65.2:1010/site.txt&quot;</span>, host: <span class="s2">&quot;localhost&quot;</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>Content-Length 만큼 클라이언트에 보냄.</p></li>
+</ul>
+<div class="highlight-html notranslate"><div class="highlight"><pre><span></span>Hello
+EOF
+</pre></div>
+</div>
+</section>
+<section id="id5">
+<h2>11. 사이즈가 큰 헤더를 보낸 경우<a class="headerlink" href="#id5" title="이 제목에 대한 퍼머링크"></a></h2>
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="kn">package</span><span class="w"> </span><span class="nx">main</span><span class="w"></span>
+
+<span class="kn">import</span><span class="w"> </span><span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="s">&quot;bytes&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="s">&quot;fmt&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="s">&quot;net&quot;</span><span class="w"></span>
+<span class="p">)</span><span class="w"></span>
+
+<span class="kd">func</span><span class="w"> </span><span class="nx">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nx">server</span><span class="p">,</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">net</span><span class="p">.</span><span class="nx">Listen</span><span class="p">(</span><span class="s">&quot;tcp&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;:1010&quot;</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="kc">nil</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="nx">fmt</span><span class="p">.</span><span class="nx">Println</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="k">return</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">defer</span><span class="w"> </span><span class="nx">server</span><span class="p">.</span><span class="nx">Close</span><span class="p">()</span><span class="w"></span>
+<span class="w">    </span><span class="nx">fmt</span><span class="p">.</span><span class="nx">Println</span><span class="p">(</span><span class="s">&quot;server started(1010).&quot;</span><span class="p">)</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="nx">conn</span><span class="p">,</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">server</span><span class="p">.</span><span class="nx">Accept</span><span class="p">()</span><span class="w"></span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="kc">nil</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="nx">fmt</span><span class="p">.</span><span class="nx">Println</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span><span class="w"></span>
+<span class="w">            </span><span class="k">continue</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">        </span><span class="kd">var</span><span class="w"> </span><span class="nx">response</span><span class="w"> </span><span class="nx">bytes</span><span class="p">.</span><span class="nx">Buffer</span><span class="w"></span>
+<span class="w">        </span><span class="nx">response</span><span class="p">.</span><span class="nx">WriteString</span><span class="p">(</span><span class="s">&quot;HTTP/1.1 200 OK\r\n&quot;</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="nx">response</span><span class="p">.</span><span class="nx">WriteString</span><span class="p">(</span><span class="s">&quot;Content-Length:5\r\n&quot;</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="nx">i</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"> </span><span class="nx">i</span><span class="w"> </span><span class="p">&lt;</span><span class="w"> </span><span class="mi">1000</span><span class="p">;</span><span class="w"> </span><span class="nx">i</span><span class="o">++</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="nx">response</span><span class="p">.</span><span class="nx">WriteString</span><span class="p">(</span><span class="s">&quot;Header-Lower:abcdefghijklmnopqrstuvwxyz\r\n&quot;</span><span class="p">)</span><span class="w"></span>
+<span class="w">            </span><span class="nx">response</span><span class="p">.</span><span class="nx">WriteString</span><span class="p">(</span><span class="s">&quot;Header-Upper:ABCDEFGHIJKLMNOPQRSTUVWXYZ\r\n&quot;</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="nx">response</span><span class="p">.</span><span class="nx">WriteString</span><span class="p">(</span><span class="s">&quot;Hello&quot;</span><span class="p">)</span><span class="w"></span>
+
+<span class="w">        </span><span class="nx">_</span><span class="p">,</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nx">conn</span><span class="p">.</span><span class="nx">Write</span><span class="p">(</span><span class="nx">response</span><span class="p">.</span><span class="nx">Bytes</span><span class="p">())</span><span class="w"></span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="kc">nil</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="nx">fmt</span><span class="p">.</span><span class="nx">Println</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">        </span><span class="nx">conn</span><span class="p">.</span><span class="nx">Close</span><span class="p">()</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">HTTP/1.1 200 OK</span><span class="w"></span>
+<span class="l l-Scalar l-Scalar-Plain">Content-Length:5</span><span class="w"></span>
+<span class="l l-Scalar l-Scalar-Plain">Header-Lower:abcdefghijklmnopqrstuvwxyz</span><span class="w"></span>
+<span class="l l-Scalar l-Scalar-Plain">Header-Upper:ABCDEFGHIJKLMNOPQRSTUVWXYZ</span><span class="w"></span>
+<span class="nn">...</span><span class="w"></span>
+
+<span class="l l-Scalar l-Scalar-Plain">Hello</span><span class="w"></span>
+<span class="l l-Scalar l-Scalar-Plain">EOF</span><span class="w"></span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>서버 로그를 남김</p></li>
+</ul>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="m">2022</span>/07/05 <span class="m">07</span>:31:42 <span class="o">[</span>error<span class="o">]</span> <span class="m">25</span><span class="c1">#25: *192 upstream sent too big header while reading</span>
+response header from upstream, client: <span class="m">172</span>.17.0.1, server: , request: <span class="s2">&quot;GET /site.txt HTTP/1.1&quot;</span>,
+upstream: <span class="s2">&quot;http://192.168.65.2:1010/site.txt&quot;</span>, host: <span class="s2">&quot;localhost&quot;</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>502 Bad Gateway 오류 발생</p></li>
+</ul>
+<div class="highlight-html notranslate"><div class="highlight"><pre><span></span><span class="p">&lt;</span><span class="nt">html</span><span class="p">&gt;</span>
+<span class="p">&lt;</span><span class="nt">head</span><span class="p">&gt;&lt;</span><span class="nt">title</span><span class="p">&gt;</span>502 Bad Gateway<span class="p">&lt;/</span><span class="nt">title</span><span class="p">&gt;&lt;/</span><span class="nt">head</span><span class="p">&gt;</span>
+<span class="p">&lt;</span><span class="nt">body</span><span class="p">&gt;</span>
+<span class="p">&lt;</span><span class="nt">center</span><span class="p">&gt;&lt;</span><span class="nt">h1</span><span class="p">&gt;</span>502 Bad Gateway<span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;&lt;/</span><span class="nt">center</span><span class="p">&gt;</span>
+<span class="p">&lt;</span><span class="nt">hr</span><span class="p">&gt;&lt;</span><span class="nt">center</span><span class="p">&gt;</span>nginx/1.21.4<span class="p">&lt;/</span><span class="nt">center</span><span class="p">&gt;</span>
+<span class="p">&lt;/</span><span class="nt">body</span><span class="p">&gt;</span>
+<span class="p">&lt;/</span><span class="nt">html</span><span class="p">&gt;</span>
+</pre></div>
+</div>
+</section>
+<section id="id6">
+<h2>12. 헤더를 받는 중에 타임 아웃이 발생한 경우<a class="headerlink" href="#id6" title="이 제목에 대한 퍼머링크"></a></h2>
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="kn">package</span><span class="w"> </span><span class="nx">main</span><span class="w"></span>
+
+<span class="kn">import</span><span class="w"> </span><span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="s">&quot;bytes&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="s">&quot;fmt&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="s">&quot;net&quot;</span><span class="w"></span>
+<span class="p">)</span><span class="w"></span>
+
+<span class="kd">func</span><span class="w"> </span><span class="nx">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nx">server</span><span class="p">,</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">net</span><span class="p">.</span><span class="nx">Listen</span><span class="p">(</span><span class="s">&quot;tcp&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;:1010&quot;</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="kc">nil</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="nx">fmt</span><span class="p">.</span><span class="nx">Println</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="k">return</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">defer</span><span class="w"> </span><span class="nx">server</span><span class="p">.</span><span class="nx">Close</span><span class="p">()</span><span class="w"></span>
+<span class="w">    </span><span class="nx">fmt</span><span class="p">.</span><span class="nx">Println</span><span class="p">(</span><span class="s">&quot;server started(1010).&quot;</span><span class="p">)</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="nx">conn</span><span class="p">,</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">server</span><span class="p">.</span><span class="nx">Accept</span><span class="p">()</span><span class="w"></span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="kc">nil</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="nx">fmt</span><span class="p">.</span><span class="nx">Println</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span><span class="w"></span>
+<span class="w">            </span><span class="k">continue</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">        </span><span class="kd">var</span><span class="w"> </span><span class="nx">response</span><span class="w"> </span><span class="nx">bytes</span><span class="p">.</span><span class="nx">Buffer</span><span class="w"></span>
+<span class="w">        </span><span class="nx">response</span><span class="p">.</span><span class="nx">WriteString</span><span class="p">(</span><span class="s">&quot;HTTP/1.1 200 OK\r\n&quot;</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="nx">response</span><span class="p">.</span><span class="nx">WriteString</span><span class="p">(</span><span class="s">&quot;Content-Length:5\r\n&quot;</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="c1">//response.WriteString(&quot;\r\n&quot;) // for timeout</span><span class="w"></span>
+
+<span class="w">        </span><span class="nx">_</span><span class="p">,</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nx">conn</span><span class="p">.</span><span class="nx">Write</span><span class="p">(</span><span class="nx">response</span><span class="p">.</span><span class="nx">Bytes</span><span class="p">())</span><span class="w"></span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="kc">nil</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="nx">fmt</span><span class="p">.</span><span class="nx">Println</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">        </span><span class="c1">// conn.Close() // for timeout</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">HTTP/1.1 200 OK</span><span class="w"></span>
+<span class="l l-Scalar l-Scalar-Plain">Content-Length:5</span><span class="w"></span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>서버 로그를 남김</p></li>
+</ul>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="m">2022</span>/07/05 <span class="m">07</span>:38:33 <span class="o">[</span>error<span class="o">]</span> <span class="m">25</span><span class="c1">#25: *194 upstream timed out (110: Connection timed out) while</span>
+reading response header from upstream, client: <span class="m">172</span>.17.0.1, server: ,
+request: <span class="s2">&quot;GET /site.txt HTTP/1.1&quot;</span>,
+upstream: <span class="s2">&quot;http://192.168.65.2:1010/site.txt&quot;</span>, host: <span class="s2">&quot;localhost&quot;</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>504 Gateway Time-out 오류 발생</p></li>
+</ul>
+<div class="highlight-html notranslate"><div class="highlight"><pre><span></span><span class="p">&lt;</span><span class="nt">html</span><span class="p">&gt;</span>
+<span class="p">&lt;</span><span class="nt">head</span><span class="p">&gt;&lt;</span><span class="nt">title</span><span class="p">&gt;</span>504 Gateway Time-out<span class="p">&lt;/</span><span class="nt">title</span><span class="p">&gt;&lt;/</span><span class="nt">head</span><span class="p">&gt;</span>
+<span class="p">&lt;</span><span class="nt">body</span><span class="p">&gt;</span>
+<span class="p">&lt;</span><span class="nt">center</span><span class="p">&gt;&lt;</span><span class="nt">h1</span><span class="p">&gt;</span>504 Gateway Time-out<span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;&lt;/</span><span class="nt">center</span><span class="p">&gt;</span>
+<span class="p">&lt;</span><span class="nt">hr</span><span class="p">&gt;&lt;</span><span class="nt">center</span><span class="p">&gt;</span>nginx/1.21.4<span class="p">&lt;/</span><span class="nt">center</span><span class="p">&gt;</span>
+<span class="p">&lt;/</span><span class="nt">body</span><span class="p">&gt;</span>
+<span class="p">&lt;/</span><span class="nt">html</span><span class="p">&gt;</span>
+</pre></div>
+</div>
+</section>
+<section id="id7">
+<h2>13. 바디를 받는 중에 타임 아웃이 발생한 경우<a class="headerlink" href="#id7" title="이 제목에 대한 퍼머링크"></a></h2>
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="kn">package</span><span class="w"> </span><span class="nx">main</span><span class="w"></span>
+
+<span class="kn">import</span><span class="w"> </span><span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="s">&quot;bytes&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="s">&quot;fmt&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="s">&quot;net&quot;</span><span class="w"></span>
+<span class="p">)</span><span class="w"></span>
+
+<span class="kd">func</span><span class="w"> </span><span class="nx">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nx">server</span><span class="p">,</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">net</span><span class="p">.</span><span class="nx">Listen</span><span class="p">(</span><span class="s">&quot;tcp&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;:1010&quot;</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="kc">nil</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="nx">fmt</span><span class="p">.</span><span class="nx">Println</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="k">return</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">defer</span><span class="w"> </span><span class="nx">server</span><span class="p">.</span><span class="nx">Close</span><span class="p">()</span><span class="w"></span>
+<span class="w">    </span><span class="nx">fmt</span><span class="p">.</span><span class="nx">Println</span><span class="p">(</span><span class="s">&quot;server started(1010).&quot;</span><span class="p">)</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="nx">conn</span><span class="p">,</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">server</span><span class="p">.</span><span class="nx">Accept</span><span class="p">()</span><span class="w"></span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="kc">nil</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="nx">fmt</span><span class="p">.</span><span class="nx">Println</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span><span class="w"></span>
+<span class="w">            </span><span class="k">continue</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">        </span><span class="kd">var</span><span class="w"> </span><span class="nx">response</span><span class="w"> </span><span class="nx">bytes</span><span class="p">.</span><span class="nx">Buffer</span><span class="w"></span>
+<span class="w">        </span><span class="nx">response</span><span class="p">.</span><span class="nx">WriteString</span><span class="p">(</span><span class="s">&quot;HTTP/1.1 200 OK\r\n&quot;</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="nx">response</span><span class="p">.</span><span class="nx">WriteString</span><span class="p">(</span><span class="s">&quot;Content-Length:10\r\n&quot;</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="nx">response</span><span class="p">.</span><span class="nx">WriteString</span><span class="p">(</span><span class="s">&quot;\r\n&quot;</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="nx">response</span><span class="p">.</span><span class="nx">WriteString</span><span class="p">(</span><span class="s">&quot;Hello&quot;</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="c1">//response.WriteString(&quot;World&quot;) // for timeout</span><span class="w"></span>
+
+<span class="w">        </span><span class="nx">_</span><span class="p">,</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nx">conn</span><span class="p">.</span><span class="nx">Write</span><span class="p">(</span><span class="nx">response</span><span class="p">.</span><span class="nx">Bytes</span><span class="p">())</span><span class="w"></span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="kc">nil</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="nx">fmt</span><span class="p">.</span><span class="nx">Println</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">        </span><span class="c1">// conn.Close() // for timeout</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">HTTP/1.1 200 OK</span><span class="w"></span>
+<span class="l l-Scalar l-Scalar-Plain">Content-Length:10</span><span class="w"></span>
+<span class="l l-Scalar l-Scalar-Plain">HelloWorld</span><span class="w"></span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>서버 로그를 남김</p></li>
+</ul>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="m">2022</span>/07/05 <span class="m">07</span>:44:10 <span class="o">[</span>error<span class="o">]</span> <span class="m">25</span><span class="c1">#25: *196 upstream timed out (110: Connection timed out)</span>
+<span class="k">while</span> reading upstream, client: <span class="m">172</span>.17.0.1, server: , request: <span class="s2">&quot;GET /site.txt HTTP/1.1&quot;</span>,
+upstream: <span class="s2">&quot;http://192.168.65.2:1010/site.txt&quot;</span>, host: <span class="s2">&quot;localhost&quot;</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>헤더까지 내려오고 끊어짐.</p></li>
+</ul>
+<div class="highlight-html notranslate"><div class="highlight"><pre><span></span>HTTP/1.1 200 OK
+Server: nginx/1.21.4
+Date: Tue, 05 Jul 2022 07:49:21 GMT
+Content-Length: 10
+Connection: keep-alive
+
+EOF
+</pre></div>
+</div>
+</section>
+<section id="expect-http-1-1-100-continue">
+<h2>13. Expect 헤더가 없는데도 HTTP/1.1 100 Continue 헤더를 내려주는 경우<a class="headerlink" href="#expect-http-1-1-100-continue" title="이 제목에 대한 퍼머링크"></a></h2>
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="kn">package</span><span class="w"> </span><span class="nx">main</span><span class="w"></span>
+
+<span class="kn">import</span><span class="w"> </span><span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="s">&quot;bytes&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="s">&quot;fmt&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="s">&quot;net&quot;</span><span class="w"></span>
+<span class="p">)</span><span class="w"></span>
+
+<span class="kd">func</span><span class="w"> </span><span class="nx">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nx">server</span><span class="p">,</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">net</span><span class="p">.</span><span class="nx">Listen</span><span class="p">(</span><span class="s">&quot;tcp&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;:1010&quot;</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="kc">nil</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="nx">fmt</span><span class="p">.</span><span class="nx">Println</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="k">return</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">defer</span><span class="w"> </span><span class="nx">server</span><span class="p">.</span><span class="nx">Close</span><span class="p">()</span><span class="w"></span>
+<span class="w">    </span><span class="nx">fmt</span><span class="p">.</span><span class="nx">Println</span><span class="p">(</span><span class="s">&quot;server started(1010).&quot;</span><span class="p">)</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="nx">conn</span><span class="p">,</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">server</span><span class="p">.</span><span class="nx">Accept</span><span class="p">()</span><span class="w"></span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="kc">nil</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="nx">fmt</span><span class="p">.</span><span class="nx">Println</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span><span class="w"></span>
+<span class="w">            </span><span class="k">continue</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">        </span><span class="kd">var</span><span class="w"> </span><span class="nx">response</span><span class="w"> </span><span class="nx">bytes</span><span class="p">.</span><span class="nx">Buffer</span><span class="w"></span>
+<span class="w">        </span><span class="nx">response</span><span class="p">.</span><span class="nx">WriteString</span><span class="p">(</span><span class="s">&quot;HTTP/1.1 100 Continue\r\n\r\n&quot;</span><span class="p">)</span><span class="w"> </span><span class="c1">// 임의로 추가함</span><span class="w"></span>
+<span class="w">        </span><span class="nx">response</span><span class="p">.</span><span class="nx">WriteString</span><span class="p">(</span><span class="s">&quot;HTTP/1.1 200 OK\r\n&quot;</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="nx">response</span><span class="p">.</span><span class="nx">WriteString</span><span class="p">(</span><span class="s">&quot;Content-Length:5\r\n&quot;</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="nx">response</span><span class="p">.</span><span class="nx">WriteString</span><span class="p">(</span><span class="s">&quot;\r\n&quot;</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="nx">response</span><span class="p">.</span><span class="nx">WriteString</span><span class="p">(</span><span class="s">&quot;Hello&quot;</span><span class="p">)</span><span class="w"></span>
+
+<span class="w">        </span><span class="nx">_</span><span class="p">,</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nx">conn</span><span class="p">.</span><span class="nx">Write</span><span class="p">(</span><span class="nx">response</span><span class="p">.</span><span class="nx">Bytes</span><span class="p">())</span><span class="w"></span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="kc">nil</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="nx">fmt</span><span class="p">.</span><span class="nx">Println</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="nx">conn</span><span class="p">.</span><span class="nx">Close</span><span class="p">()</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>응답 헤더가 이상하지만 에러 없이 처리되고, 브라우저에서는 정상적으로 보임</p></li>
+</ul>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">HTTP/1.1 100 Continue</span><span class="w"></span>
+<span class="l l-Scalar l-Scalar-Plain">Server</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">nginx/1.23.1</span><span class="w"></span>
+<span class="nt">Date</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Fri, 07 Oct 2022 03:42:45 GMT</span><span class="w"></span>
+<span class="nt">Connection</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">close</span><span class="w"></span>
+
+<span class="l l-Scalar l-Scalar-Plain">HTTP/1.1 200 OK</span><span class="w"></span>
+<span class="l l-Scalar l-Scalar-Plain">Content-Length:5</span><span class="w"></span>
+
+<span class="l l-Scalar l-Scalar-Plain">HelloEOF</span><span class="w"></span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>브라우저에서는 응답 헤더로 Content-Length 만 보임.</p></li>
+</ul>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">Content-Length:5</span><span class="w"></span>
+
+<span class="l l-Scalar l-Scalar-Plain">HelloEOF</span><span class="w"></span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>브라우저에서 직접 <a class="reference external" href="http://localhost:1010">http://localhost:1010</a> 서버에 접속하면 오류 발생함.</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../request/request_header.html" class="btn btn-neutral float-left" title="Request Header Handling" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../systemctl/systemctl.html" class="btn btn-neutral float-right" title="SystemCtl" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; 저작권 2022, flexus.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

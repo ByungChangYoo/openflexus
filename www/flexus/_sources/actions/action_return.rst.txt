@@ -1,0 +1,37 @@
+return()
+=======================
+
+.. code-block:: yaml
+
+    return("301 | 302 | 303 | 307", "url") : {
+        header : {
+            name : value;
+              ...
+        }
+    }
+
+.. code-block:: yaml
+
+    return("1xx | 2xx | 4xx | 5xx", ["text"]) : {
+        header : {
+            name : value;
+              ...
+        }
+    }
+
+For a code in the 3xx series, the url parameter defines the new (rewritten) URL.
+
+.. code-block:: yaml
+
+    return("301 | 302 | 303 | 307", "url");
+
+For other codes, you optionally define a text string which appears in the body of the response (the standard text for the HTTP code, such as Not Found for 404, is still included in the header). The text can contain NGINX variables.
+
+.. code-block:: yaml
+
+    return("1xx | 2xx | 4xx | 5xx", ["text"]);
+
+For example, this directive might be appropriate when rejecting requests that don’t have a valid authentication token:
+
+return 401 "Access denied because token is expired or invalid";
+There are also a couple syntactic shortcuts you can use, such as omitting the code if it is 302; see the reference documentation for the return directive.

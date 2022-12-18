@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="ko" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>mime-types &mdash; flexus 1.0 문서</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/copybutton.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/theme_overrides.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/tabs.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/clipboard.min.js"></script>
+        <script src="../_static/copybutton.js"></script>
+        <script src="../_static/tabs.js"></script>
+        <script src="../_static/translations.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="author" title="이 문서 정보" href="../about.html" />
+    <link rel="index" title="색인" href="../genindex.html" />
+    <link rel="search" title="검색" href="../search.html" />
+    <link rel="next" title="auto-index" href="config_auto_index.html" />
+    <link rel="prev" title="rewrite-response-header" href="config_rewrite_response_header.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> flexus
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../about.html">About</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Install</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../actions/actions.html">Action</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="configs.html">Config</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="config_add_response_header.html">add-response-header</a></li>
+<li class="toctree-l2"><a class="reference internal" href="config_add_response_header_off_if_error.html">add-response-header-off-if-error</a></li>
+<li class="toctree-l2"><a class="reference internal" href="config_add_response_header_parent_off.html">add-response-header-parent-off</a></li>
+<li class="toctree-l2"><a class="reference internal" href="config_set_response_header.html">set-response-header</a></li>
+<li class="toctree-l2"><a class="reference internal" href="config_set_response_header_off_if_error.html">set-response-header-off-if-error</a></li>
+<li class="toctree-l2"><a class="reference internal" href="config_set_response_header_parent_off.html">set-response-header-parent-off</a></li>
+<li class="toctree-l2"><a class="reference internal" href="config_rewrite_response_header.html">rewrite-response-header</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">mime-types</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#statistics">Statistics</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="config_auto_index.html">auto-index</a></li>
+<li class="toctree-l2"><a class="reference internal" href="config_expires.html">expires</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../variables/variables.html">Variable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../functions/functions.html">Funtion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer/developer.html">Developer</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">flexus</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="configs.html">Config</a> &raquo;</li>
+      <li>mime-types</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/configs/config_mime_types.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="mime-types">
+<h1>mime-types<a class="headerlink" href="#mime-types" title="이 제목에 대한 퍼머링크"></a></h1>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">mime-types </span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="w"></span>
+<span class="w">    </span><span class="s">&quot;file-extension&quot;</span><span class="nt"> </span><span class="p">:</span><span class="w"> </span><span class="s">&quot;mime-type&quot;</span><span class="nv">;</span><span class="w"></span>
+<span class="w">    </span><span class="nv">...</span><span class="w"></span>
+<span class="p p-Indicator">}</span><span class="w"></span>
+</pre></div>
+</div>
+<p>웹 서버는 브라우저가 요청한 파일이 어떤 종류의 파일인지를 <code class="docutils literal notranslate"><span class="pre">Content-Type</span></code> 헤더를 통해 알려준다. <code class="docutils literal notranslate"><span class="pre">Content-Type</span></code> 헤더로 알려준 파일에 대한 정보를 일반적으로 마임 타입(MIME-Type)이라고 부른다.
+마임 타입은 <code class="docutils literal notranslate"><span class="pre">/</span></code> 로 구분하여 <code class="docutils literal notranslate"><span class="pre">메입</span> <span class="pre">타입/서브</span> <span class="pre">타입</span></code> 형식으로 표현한다. 아래 표는 대표적인 마임 타입니다.</p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>메인 타입</p></th>
+<th class="head"><p>설명</p></th>
+<th class="head"><p>서브 타입</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>text</p></td>
+<td><p>테스트를 표현</p></td>
+<td><p>text/plain text/html  text/css text/javascript</p></td>
+</tr>
+<tr class="row-odd"><td><p>image</p></td>
+<td><p>이미지를 표현</p></td>
+<td><p>image/gif image/png image/jpeg image/bmp</p></td>
+</tr>
+<tr class="row-even"><td><p>video</p></td>
+<td><p>동영상을 표현</p></td>
+<td><p>video/mp4 video/ogg video/mpeg4-generic</p></td>
+</tr>
+<tr class="row-odd"><td><p>application</p></td>
+<td><p>이진 데이터 표현</p></td>
+<td><p>application/octet-stream application/vnd.mspowerpoint  application/xml   application/pdf  application/json</p></td>
+</tr>
+</tbody>
+</table>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 8%" />
+<col style="width: 31%" />
+<col style="width: 62%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>메인 타입</p></th>
+<th class="head"><p>설명</p></th>
+<th class="head"><p>서브 타입</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>text</p></td>
+<td><p>테스트를 표현</p></td>
+<td><ul class="simple">
+<li><p>text/plain</p></li>
+<li><p>text/html</p></li>
+<li><p>text/css</p></li>
+<li><p>text/javascript</p></li>
+</ul>
+</td>
+</tr>
+<tr class="row-odd"><td><p>image</p></td>
+<td><p>이미지를 표현</p></td>
+<td><ul class="simple">
+<li><p>image/gif</p></li>
+<li><p>image/png</p></li>
+<li><p>image/jpeg</p></li>
+<li><p>image/bmp</p></li>
+</ul>
+</td>
+</tr>
+<tr class="row-even"><td><p>video</p></td>
+<td><p>동영상을 표현</p></td>
+<td><ul class="simple">
+<li><p>video/mp4</p></li>
+<li><p>video/ogg</p></li>
+<li><p>video/mpeg4-generic</p></li>
+</ul>
+</td>
+</tr>
+<tr class="row-odd"><td><p>application</p></td>
+<td><p>이진 데이터 표현</p></td>
+<td><ul class="simple">
+<li><p>application/octet-stream</p></li>
+<li><p>application/vnd.mspowerpoint</p></li>
+<li><p>application/xml</p></li>
+<li><p>application/pdf</p></li>
+<li><p>application/json</p></li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>마임 타입이 중요한 이유는 브라우저가 마임 타입에 따라 서버에서 받은 데이터를 어떻게 처리할 지 결정하기 때문이다.
+마입 타입이 이지미(<code class="docutils literal notranslate"><span class="pre">image/*</span></code>)라면 화면에 보여줄 것이고 동영상(<code class="docutils literal notranslate"><span class="pre">video/*</span></code>)이라면 동영상을 재생할 것이다.
+인식할 수 없는 마임 타입은 브라우저를 혼란에 빠트린다. 마임 타입을 모를 때 브라우저가 보여주는 일반적인 행동 양식은 우리에게
+익숙한 다로운도 창을 보여주기다.</p>
+<p>브라우저 주소창에 이미지 경로를 입력했는데 이미지를 보여주지 않고 다운로드 창이 나온다. 이쁘게 포맷팅된 XML을 상상하며 주소창에 XML
+경로를 입력했는데 다운로드 창이 나온다. 계속하여 우리의 예상을 배반하고 브라우저가 이상 작동을 무한 반복한다면 이는 분명 웹 서버의 마임 설정이 잘 못된 것이다.</p>
+<p>운용 중인 웹 사이트가 깨지지 않고 정상적으로 표현되려면 웹 서버는 브라우저가 요청한 파일에 대해 적절한 마임 타입을 설정하여 응답을 내려주어야 한다.
+예를 들어 이미지 파일을 요청 했는데 이미지에 해당하는 마임 타입(<code class="docutils literal notranslate"><span class="pre">image/*</span></code>)이 아니라 엉뚱한 마임 타입을 내려주면 브라우저는 이미지를 똑바로 보여주지
+못할 수도 있다.
+요즘 브라우저는 똑똑해서 웹 서버가 마임 타입을 설정하지 않아도 요청 파일의 확장명으로 마임 타입을 알 수 있어 우려하던 일은 흔하게 발생하지 않는다.
+하지만, 이미지가 파일이 아니라 CGI 내지는 JSP 호출로 동적으로 만들어지는 이미지라면 마임 타입 설정이 중요하다. 동적 콘텐츠에 대해서 브라우저가
+확장명 만으로 마임 타입을 정확히 예상할 수 없기 때문이다.</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">http[&quot;9090&quot;]</span><span class="w"> </span><span class="p p-Indicator">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="w"></span>
+<span class="nt">auto-index </span><span class="p">:</span><span class="w"> </span><span class="s">&quot;on&quot;</span><span class="nv">;</span><span class="w"></span>
+<span class="nv">mime-types</span><span class="w"> </span><span class="p p-Indicator">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="w"></span>
+<span class="w">    </span><span class="s">&quot;html&quot;</span><span class="nt"> </span><span class="p">:</span><span class="w"> </span><span class="s">&quot;text/html&quot;</span><span class="nv">;</span><span class="w"></span>
+<span class="w">    </span><span class="nv">&quot;css&quot;</span><span class="w">  </span><span class="p p-Indicator">:</span><span class="w"> </span><span class="s">&quot;text/css&quot;</span><span class="nv">;</span><span class="w"></span>
+<span class="w">    </span><span class="nv">&quot;xml&quot;</span><span class="w">  </span><span class="p p-Indicator">:</span><span class="w"> </span><span class="s">&quot;text/xml&quot;</span><span class="nv">;</span><span class="w"></span>
+<span class="w">    </span><span class="nv">&quot;gif&quot;</span><span class="w">  </span><span class="p p-Indicator">:</span><span class="w"> </span><span class="s">&quot;image/gif&quot;</span><span class="nv">;</span><span class="w"></span>
+<span class="w">    </span><span class="nv">&quot;jpg&quot;</span><span class="w">  </span><span class="p p-Indicator">:</span><span class="w"> </span><span class="s">&quot;image/jpg&quot;</span><span class="nv">;</span><span class="w"></span>
+<span class="w">    </span><span class="nv">&quot;js&quot;</span><span class="w">   </span><span class="p p-Indicator">:</span><span class="w"> </span><span class="s">&quot;application/x-javascript&quot;</span><span class="nv">;</span><span class="w"></span>
+<span class="w">    </span><span class="nv">&quot;txt&quot;</span><span class="w">  </span><span class="p p-Indicator">:</span><span class="w"> </span><span class="s">&quot;text/plain&quot;</span><span class="nv">;</span><span class="w"></span>
+<span class="w">    </span><span class="nv">&quot;png&quot;</span><span class="w">  </span><span class="p p-Indicator">:</span><span class="w"> </span><span class="s">&quot;image/png&quot;</span><span class="nv">;</span><span class="w"></span>
+<span class="w">    </span><span class="p p-Indicator">}</span><span class="w"></span>
+
+
+<span class="w">    </span><span class="nv">access</span><span class="p p-Indicator">[</span><span class="s">&quot;@equal(&#39;${method}&#39;,</span><span class="nv"> </span><span class="s">&#39;GET&#39;)&quot;</span><span class="p p-Indicator">]</span><span class="nt"> </span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="w"></span>
+<span class="nt">        allow </span><span class="p">:</span><span class="w"> </span><span class="s">&quot;127.0.0.1&quot;</span><span class="nv">;</span><span class="w"></span>
+<span class="w">        </span><span class="nv">allow</span><span class="w"> </span><span class="p p-Indicator">:</span><span class="w"> </span><span class="s">&quot;127.0.0.2&quot;</span><span class="nv">;</span><span class="w"></span>
+<span class="w">        </span><span class="nv">allow</span><span class="w"> </span><span class="p p-Indicator">:</span><span class="w"> </span><span class="s">&quot;127.0.0.3&quot;</span><span class="nv">;</span><span class="w"></span>
+<span class="w">        </span><span class="nv">deny</span><span class="w"> </span><span class="p p-Indicator">:</span><span class="w"> </span><span class="s">&quot;127.0.0.4&quot;</span><span class="nv">;</span><span class="w"></span>
+<span class="w">        </span><span class="nv">deny</span><span class="w"> </span><span class="p p-Indicator">:</span><span class="w"> </span><span class="s">&quot;127.0.0.5&quot;</span><span class="nv">;</span><span class="w"></span>
+<span class="w">    </span><span class="p p-Indicator">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="nv">return(&quot;200&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;access</span><span class="nv"> </span><span class="s">ok</span><span class="nv"> </span><span class="s">-</span><span class="nv"> </span><span class="s">${uri}.&quot;</span><span class="nv">);</span><span class="w"></span>
+<span class="w">    </span><span class="nv">index</span><span class="w"> </span><span class="p p-Indicator">:</span><span class="w"> </span><span class="s">&quot;index.html&quot;</span><span class="nv">;</span><span class="w"></span>
+<span class="w">    </span><span class="nv">index</span><span class="w"> </span><span class="p p-Indicator">:</span><span class="w"> </span><span class="s">&quot;home.html&quot;</span><span class="nv">;</span><span class="w"></span>
+<span class="w">    </span><span class="nv">root</span><span class="w"> </span><span class="p p-Indicator">:</span><span class="w"> </span><span class="s">&quot;/Users/blueeyes/ClionProjects/dalcom-web-cpp/resources/&quot;</span><span class="nv">;</span><span class="w"></span>
+<span class="p p-Indicator">}</span><span class="w"></span>
+</pre></div>
+</div>
+<div class="sphinx-tabs docutils container">
+<div aria-label="Tabbed content" class="closeable" role="tablist"><button aria-controls="panel-0-0-0" aria-selected="true" class="sphinx-tabs-tab" id="tab-0-0-0" name="0-0" role="tab" tabindex="0">curl</button><button aria-controls="panel-0-0-1" aria-selected="false" class="sphinx-tabs-tab" id="tab-0-0-1" name="0-1" role="tab" tabindex="-1">http</button><button aria-controls="panel-0-0-2" aria-selected="false" class="sphinx-tabs-tab" id="tab-0-0-2" name="0-2" role="tab" tabindex="-1">Oranges</button></div><div aria-labelledby="tab-0-0-0" class="sphinx-tabs-panel" id="panel-0-0-0" name="0-0" role="tabpanel" tabindex="0"><div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$ curl -i -X POST <span class="se">\</span>
+--url http://localhost:8001/services/example-service/plugins/ <span class="se">\</span>
+--data <span class="s1">&#39;name=rate-limiting&#39;</span> <span class="se">\</span>
+--data <span class="s1">&#39;config.minute=100&#39;</span>
+</pre></div>
+</div>
+</div><div aria-labelledby="tab-0-0-1" class="sphinx-tabs-panel" hidden="true" id="panel-0-0-1" name="0-1" role="tabpanel" tabindex="0"><p>Pears are green.</p>
+</div><div aria-labelledby="tab-0-0-2" class="sphinx-tabs-panel" hidden="true" id="panel-0-0-2" name="0-2" role="tabpanel" tabindex="0"><p>Oranges are orange.</p>
+</div></div>
+<section id="statistics">
+<h2>Statistics<a class="headerlink" href="#statistics" title="이 제목에 대한 퍼머링크"></a></h2>
+<p>This filter has a statistics tree rooted at <em>http_inspector</em> with the following statistics:</p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Name</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>read_error</p></td>
+<td><p>Counter</p></td>
+<td><p>Total read errors</p></td>
+</tr>
+<tr class="row-odd"><td><p>http10_found</p></td>
+<td><p>Counter</p></td>
+<td><p>Total number of times HTTP/1.0 was found</p></td>
+</tr>
+<tr class="row-even"><td><p>http11_found</p></td>
+<td><p>Counter</p></td>
+<td><p>Total number of times HTTP/1.1 was found</p></td>
+</tr>
+<tr class="row-odd"><td><p>http2_found</p></td>
+<td><p>Counter</p></td>
+<td><p>Total number of times HTTP/2 was found</p></td>
+</tr>
+<tr class="row-even"><td><p>http_not_found</p></td>
+<td><p>Counter</p></td>
+<td><p>Total number of times HTTP protocol was not found</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="config_rewrite_response_header.html" class="btn btn-neutral float-left" title="rewrite-response-header" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="config_auto_index.html" class="btn btn-neutral float-right" title="auto-index" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; 저작권 2022, flexus.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

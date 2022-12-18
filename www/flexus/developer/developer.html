@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="ko" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Developer &mdash; flexus 1.0 문서</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/copybutton.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/theme_overrides.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/tabs.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/clipboard.min.js"></script>
+        <script src="../_static/copybutton.js"></script>
+        <script src="../_static/translations.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="author" title="이 문서 정보" href="../about.html" />
+    <link rel="index" title="색인" href="../genindex.html" />
+    <link rel="search" title="검색" href="../search.html" />
+    <link rel="next" title="Request Header Handling" href="request/request_header.html" />
+    <link rel="prev" title="Funtion" href="../functions/functions.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> flexus
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../about.html">About</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Install</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../actions/actions.html">Action</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../configs/configs.html">Config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../variables/variables.html">Variable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../functions/functions.html">Funtion</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Developer</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="request/request_header.html">Request Header Handling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="proxy/proxy.html">Proxy Handling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="systemctl/systemctl.html">SystemCtl</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">flexus</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Developer</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/developer/developer.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="developer">
+<h1>Developer<a class="headerlink" href="#developer" title="이 제목에 대한 퍼머링크"></a></h1>
+<p>Flexus 에서 지원하는 모듈에 대한 설명입니다.</p>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="request/request_header.html">Request Header Handling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="proxy/proxy.html">Proxy Handling</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="proxy/proxy.html#http">1. HTTP 응답의 첫번째 라인이 잘못된 경우</a></li>
+<li class="toctree-l2"><a class="reference internal" href="proxy/proxy.html#id1">2. 응답의 헤더가 HTTP 규격에 맞지 않는 경우</a></li>
+<li class="toctree-l2"><a class="reference internal" href="proxy/proxy.html#server-date">3. Server 와 Date 헤더가 포함된 경우</a></li>
+<li class="toctree-l2"><a class="reference internal" href="proxy/proxy.html#transfer-encoding">4. Transfer-Encoding 헤더의 값이 이상한 경우</a></li>
+<li class="toctree-l2"><a class="reference internal" href="proxy/proxy.html#tranfere-encoding-content-length">5. Tranfere-Encoding/Content-Length 헤더는 없지만 바디가 있는 경우</a></li>
+<li class="toctree-l2"><a class="reference internal" href="proxy/proxy.html#content-encoding">6. Content-Encoding 헤더의 값이 이상한 경우</a></li>
+<li class="toctree-l2"><a class="reference internal" href="proxy/proxy.html#id2">6. 응답 헤더를 보내는 중에 네트워크가 끊긴 경우</a></li>
+<li class="toctree-l2"><a class="reference internal" href="proxy/proxy.html#id3">7. 응답 바디를 보내는 중에 네트워크가 끊긴 경우</a></li>
+<li class="toctree-l2"><a class="reference internal" href="proxy/proxy.html#chunked-flush">8. chunked 인코딩이 잘못된 경우(Flush 이후 에러)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="proxy/proxy.html#id4">9. chunked 인코딩이 잘못된 경우(Flush 이전 에러)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="proxy/proxy.html#content-length">10. Content-Length 보다 큰 바디를 보낸 경우</a></li>
+<li class="toctree-l2"><a class="reference internal" href="proxy/proxy.html#id5">11. 사이즈가 큰 헤더를 보낸 경우</a></li>
+<li class="toctree-l2"><a class="reference internal" href="proxy/proxy.html#id6">12. 헤더를 받는 중에 타임 아웃이 발생한 경우</a></li>
+<li class="toctree-l2"><a class="reference internal" href="proxy/proxy.html#id7">13. 바디를 받는 중에 타임 아웃이 발생한 경우</a></li>
+<li class="toctree-l2"><a class="reference internal" href="proxy/proxy.html#expect-http-1-1-100-continue">13. Expect 헤더가 없는데도 HTTP/1.1 100 Continue 헤더를 내려주는 경우</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="systemctl/systemctl.html">SystemCtl</a></li>
+</ul>
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../functions/functions.html" class="btn btn-neutral float-left" title="Funtion" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="request/request_header.html" class="btn btn-neutral float-right" title="Request Header Handling" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; 저작권 2022, flexus.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

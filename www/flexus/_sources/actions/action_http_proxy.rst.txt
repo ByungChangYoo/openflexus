@@ -1,0 +1,15 @@
+http-proxy()
+=======================
+
+.. code-block:: yaml
+
+    http["80"] : {
+        auto-index:  "on";
+        host["*"] :  {
+            path["/"] : {
+                http-proxy("http://localhost:9000");
+            }
+        }
+    }
+
+

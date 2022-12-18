@@ -1,0 +1,73 @@
+send-file()
+=======================
+
+Flexus 에서 지원하는 모듈에 대한 설명입니다.
+
+
+.. code-block:: yaml
+
+    http["9090"] : {
+    auto-index : "on";
+    mime-types : {
+        "html" : "text/html";
+        "css"  : "text/css";
+        "xml"  : "text/xml";
+        "gif"  : "image/gif";
+        "jpg"  : "image/jpg";
+        "js"   : "application/x-javascript";
+        "txt"  : "text/plain";
+        "png"  : "image/png";
+        }
+
+
+        access["@equal('${method}', 'GET')"] : {
+            allow : "127.0.0.1";
+            allow : "127.0.0.2";
+            allow : "127.0.0.3";
+            deny : "127.0.0.4";
+            deny : "127.0.0.5";
+        }
+
+        return("200", "access ok - ${uri}.");
+        index : "index.html";
+        index : "home.html";
+        root : "/Users/blueeyes/ClionProjects/dalcom-web-cpp/resources/";
+    }
+
+안녕하세요
+
+.. tabs::
+
+   .. tab:: curl
+
+      .. code-block:: shell
+
+            $ curl -i -X POST \
+            --url http://localhost:8001/services/example-service/plugins/ \
+            --data 'name=rate-limiting' \
+            --data 'config.minute=100'
+
+   .. tab:: http
+
+      Pears are green.
+
+   .. tab:: Oranges
+
+      Oranges are orange.
+
+Statistics
+----------
+
+This filter has a statistics tree rooted at *http_inspector* with the following statistics:
+
+.. csv-table::
+  :header: Name, Type, Description
+  :widths: 1, 1, 2
+
+  read_error, Counter, Total read errors
+  http10_found, Counter, Total number of times HTTP/1.0 was found
+  http11_found, Counter, Total number of times HTTP/1.1 was found
+  http2_found, Counter, Total number of times HTTP/2 was found
+  http_not_found, Counter, Total number of times HTTP protocol was not found
+
+          

@@ -1,0 +1,138 @@
+mime-types
+=======================
+
+.. code-block:: yaml
+
+    mime-types : {
+        "file-extension" : "mime-type";
+        ...
+    }
+
+웹 서버는 브라우저가 요청한 파일이 어떤 종류의 파일인지를 ``Content-Type`` 헤더를 통해 알려준다. ``Content-Type`` 헤더로 알려준 파일에 대한 정보를 일반적으로 마임 타입(MIME-Type)이라고 부른다.
+마임 타입은 ``/`` 로 구분하여 ``메입 타입/서브 타입`` 형식으로 표현한다. 아래 표는 대표적인 마임 타입니다.
+
+.. csv-table::
+  :header: 메인 타입, 설명, 서브 타입
+  :widths: 1, 1, 2
+
+  text, 테스트를 표현, text/plain text/html  text/css text/javascript
+  image, 이미지를 표현, image/gif image/png image/jpeg image/bmp
+  video, 동영상을 표현, video/mp4 video/ogg video/mpeg4-generic
+  application, 이진 데이터 표현, application/octet-stream application/vnd.mspowerpoint  application/xml   application/pdf  application/json
+
+.. list-table::
+   :widths: 25 100 200
+   :header-rows: 1
+
+   * - 메인 타입
+     - 설명
+     - 서브 타입
+   * - text
+     - 테스트를 표현
+     -
+        - text/plain
+        - text/html
+        - text/css
+        - text/javascript
+   * - image
+     - 이미지를 표현
+     -
+        - image/gif
+        - image/png
+        - image/jpeg
+        - image/bmp
+   * - video
+     - 동영상을 표현
+     -
+        - video/mp4
+        - video/ogg
+        - video/mpeg4-generic
+   * - application
+     - 이진 데이터 표현
+     -
+        - application/octet-stream
+        - application/vnd.mspowerpoint
+        - application/xml
+        - application/pdf
+        - application/json
+
+마임 타입이 중요한 이유는 브라우저가 마임 타입에 따라 서버에서 받은 데이터를 어떻게 처리할 지 결정하기 때문이다.
+마입 타입이 이지미(``image/*``)라면 화면에 보여줄 것이고 동영상(``video/*``)이라면 동영상을 재생할 것이다.
+인식할 수 없는 마임 타입은 브라우저를 혼란에 빠트린다. 마임 타입을 모를 때 브라우저가 보여주는 일반적인 행동 양식은 우리에게
+익숙한 다로운도 창을 보여주기다.
+
+브라우저 주소창에 이미지 경로를 입력했는데 이미지를 보여주지 않고 다운로드 창이 나온다. 이쁘게 포맷팅된 XML을 상상하며 주소창에 XML
+경로를 입력했는데 다운로드 창이 나온다. 계속하여 우리의 예상을 배반하고 브라우저가 이상 작동을 무한 반복한다면 이는 분명 웹 서버의 마임 설정이 잘 못된 것이다.
+
+운용 중인 웹 사이트가 깨지지 않고 정상적으로 표현되려면 웹 서버는 브라우저가 요청한 파일에 대해 적절한 마임 타입을 설정하여 응답을 내려주어야 한다.
+예를 들어 이미지 파일을 요청 했는데 이미지에 해당하는 마임 타입(``image/*``)이 아니라 엉뚱한 마임 타입을 내려주면 브라우저는 이미지를 똑바로 보여주지
+못할 수도 있다.
+요즘 브라우저는 똑똑해서 웹 서버가 마임 타입을 설정하지 않아도 요청 파일의 확장명으로 마임 타입을 알 수 있어 우려하던 일은 흔하게 발생하지 않는다.
+하지만, 이미지가 파일이 아니라 CGI 내지는 JSP 호출로 동적으로 만들어지는 이미지라면 마임 타입 설정이 중요하다. 동적 콘텐츠에 대해서 브라우저가
+확장명 만으로 마임 타입을 정확히 예상할 수 없기 때문이다.
+
+.. code-block:: yaml
+
+    http["9090"] : {
+    auto-index : "on";
+    mime-types : {
+        "html" : "text/html";
+        "css"  : "text/css";
+        "xml"  : "text/xml";
+        "gif"  : "image/gif";
+        "jpg"  : "image/jpg";
+        "js"   : "application/x-javascript";
+        "txt"  : "text/plain";
+        "png"  : "image/png";
+        }
+
+
+        access["@equal('${method}', 'GET')"] : {
+            allow : "127.0.0.1";
+            allow : "127.0.0.2";
+            allow : "127.0.0.3";
+            deny : "127.0.0.4";
+            deny : "127.0.0.5";
+        }
+
+        return("200", "access ok - ${uri}.");
+        index : "index.html";
+        index : "home.html";
+        root : "/Users/blueeyes/ClionProjects/dalcom-web-cpp/resources/";
+    }
+
+.. tabs::
+
+   .. tab:: curl
+
+      .. code-block:: shell
+
+            $ curl -i -X POST \
+            --url http://localhost:8001/services/example-service/plugins/ \
+            --data 'name=rate-limiting' \
+            --data 'config.minute=100'
+
+   .. tab:: http
+
+      Pears are green.
+
+   .. tab:: Oranges
+
+      Oranges are orange.
+
+Statistics
+----------
+
+This filter has a statistics tree rooted at *http_inspector* with the following statistics:
+
+.. csv-table::
+  :header: Name, Type, Description
+  :widths: 1, 1, 2
+
+  read_error, Counter, Total read errors
+  http10_found, Counter, Total number of times HTTP/1.0 was found
+  http11_found, Counter, Total number of times HTTP/1.1 was found
+  http2_found, Counter, Total number of times HTTP/2 was found
+  http_not_found, Counter, Total number of times HTTP protocol was not found
+
+          

@@ -1,0 +1,8 @@
+Variable
+=======================
+
+Flexus 에서 지원하는 변수
+
+.. toctree::
+   :maxdepth: 4
+   :caption: Contents:
